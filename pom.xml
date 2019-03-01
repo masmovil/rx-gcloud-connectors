@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.masmovil</groupId>
+    <artifactId>RxGcloudConnectors</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>rxJava Gcloud Connectors</name>
+    <description>
+        The aim of this project is develop rxJava connector to Gcloud Dbs
+    </description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>11</java.version>
+        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+        <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
+        <junit-platform-launcher.version>1.2.0</junit-platform-launcher.version>
+        <junit.version>4.12</junit.version>
+        <vertx.version>3.6.3</vertx.version>
+        <mokito.version>2.23.4</mokito.version>
+        <assertj.version>3.8.0</assertj.version>
+    </properties>
+
+    <modules>
+        <module>firestore</module>
+        <module>pubsub</module>
+        <module>datastore</module>
+        <module>bigquery</module>
+        <module>cloudStorage</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- Test -->
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-junit5</artifactId>
+                <version>${vertx.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${junit-platform-launcher.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mokito.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <directory>target</directory>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>protoc-plugin</id>
+            <url>https://dl.bintray.com/sergei-ivanov/maven/</url>
+        </pluginRepository>
+    </pluginRepositories>
+</project>
