@@ -1,0 +1,30 @@
+substitutions:
+
+options:
+  substitution_option: 'ALLOW_LOOSE'
+tags: ['lab', 'rxJavaGcloudConnectors']
+
+steps:
+- name: gcr.io/cloud-builders/gcloud
+  id: prepare-context-m2
+  volumes:
+  - name: 'm2'
+    path: '/root/.m2'
+  args:
+  - kms
+  - decrypt
+  - --ciphertext-file=settings.xml.encrypted
+  - --plaintext-file=/root/.m2/settings.xml
+  - --location=europe
+  - --keyring=builds
+  - --key=nexus-settings
+- name: 'maven:3.6.0-jdk-11'
+  id: build
+  volumes:
+  - name: 'm2'
+    path: '/root/.m2'
+  entrypoint: '/bin/bash'
+  args:
+  - '-c'
+  - |
+    mvn clean package
