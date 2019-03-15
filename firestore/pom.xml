@@ -11,7 +11,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.masmovil</groupId>
+    <groupId>com.masmovil.gcloud</groupId>
     <artifactId>firestore</artifactId>
     <packaging>jar</packaging>
     <version>1.0.0-SNAPSHOT</version>
@@ -21,7 +21,6 @@
         <firestore.version>0.80.0-beta</firestore.version>
         <powermock.version>1.7.4</powermock.version>
     </properties>
-
 
     <distributionManagement>
         <snapshotRepository>

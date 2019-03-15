@@ -11,7 +11,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.masmovil</groupId>
+    <groupId>com.masmovil.gcloud</groupId>
     <artifactId>bigquery</artifactId>
     <packaging>jar</packaging>
     <version>1.0.0-SNAPSHOT</version>
