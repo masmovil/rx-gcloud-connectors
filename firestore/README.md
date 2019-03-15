@@ -1,12 +1,17 @@
 # Firestore
 
 Java Reactive `Firestore` connector.
+<img align="right" src="https://github.com/masmovil/rx-gcloud-connectors/firestore/blob/master/firestoreLogo.png">
 
 ## Minimum Requirements
 
 -   Java 11
 -   Maven 3.5.3
 
+## Maven useful commands
+
+* build firestore project: ```mvn -pl .,firestore clean install```
+* deploy firestore SDK into nexus: ```mvn -pl firestore deploy```
 
 ## How to use it
 
