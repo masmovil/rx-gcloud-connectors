@@ -1,7 +1,8 @@
+<img align="right" src="https://github.com/masmovil/rx-gcloud-connectors/blob/master/firestore/firestoreLogo.png">
+
 # Firestore
 
 Java Reactive `Firestore` connector.
-<img align="right" src="https://github.com/masmovil/rx-gcloud-connectors/blob/master/firestore/firestoreLogo.png">
 
 ## Minimum Requirements
 
