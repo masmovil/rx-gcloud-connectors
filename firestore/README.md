@@ -14,6 +14,16 @@ Java Reactive `Firestore` connector.
 
 ## How to use it
 
+Add in your pom the following dependency:
+
+```
+        <dependency>
+            <groupId>com.masmovil.gcloud</groupId>
+            <artifactId>firestore</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+```
+
 Create your own repository and extends `FirestoreTemplate`. You must provide your Key, model and return type as parameters.
 
 for example:
