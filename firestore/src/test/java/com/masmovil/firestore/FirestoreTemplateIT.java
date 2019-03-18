@@ -16,7 +16,7 @@ import io.vertx.core.logging.LoggerFactory;
 public class FirestoreTemplateIT {
 
 	//TODO: replace CREDENTIALS_PATH with your credentials.
-	private final static String CREDENTIALS_PATH = "~/Desktop/keyfile.json";
+	private final static String CREDENTIALS_PATH = "/Users/pjgg/Desktop/keyfile.json";
 	private final static Logger LOG = LoggerFactory.getLogger(FirestoreTemplateIT.class);
 	private CarsRepository carsRepository = new CarsRepository(CREDENTIALS_PATH, 1);
 
@@ -109,11 +109,10 @@ public class FirestoreTemplateIT {
 		var retrievedCar = carsRepository.get(query).blockingGet();
 
 		LOG.info("Size " + retrievedCar.size());
-		retrievedCar.stream().forEach(r -> assertEquals(r.getModel(), expectedModel));
+		retrievedCar.stream().forEach(r -> assertEquals(r.getBrand(), "Toyota"));
 	}
 
-
-	@Ignore
+    @Ignore
 	@Test
 	public void should_subscribe_to_query() throws InterruptedException {
 
