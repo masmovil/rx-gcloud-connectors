@@ -18,7 +18,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <firestore.version>0.80.0-beta</firestore.version>
+        <maven-build-helper-plugin.version>3.0.0</maven-build-helper-plugin.version>
+        <firestore.version>0.83.0-beta</firestore.version>
         <powermock.version>1.7.4</powermock.version>
     </properties>
 
@@ -47,6 +48,7 @@
             <artifactId>google-cloud-firestore</artifactId>
             <version>${firestore.version}</version>
         </dependency>
+
 
         <!-- test -->
         <dependency>
@@ -81,6 +83,20 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>1.21</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>1.21</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 
@@ -100,4 +116,54 @@
 
         </plugins>
     </build>
+
+    <profiles>
+
+        <profile>
+            <id>firestore-microbenchmark</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Add Acceptance Test -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>${maven-build-helper-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>add-test-source</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/microbenchmark/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>add-test-resource</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>add-test-resource</goal>
+                                </goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/microbenchmark/resources</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

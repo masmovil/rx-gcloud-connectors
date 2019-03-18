@@ -1,5 +1,5 @@
 package com.masmovil.firestore;
-
+/*
 import java.util.concurrent.Executors;
 
 import com.google.cloud.firestore.Firestore;
@@ -14,3 +14,4 @@ public class CarsRepository extends FirestoreTemplate<String, CarModel, CarModel
 		super(fs, Executors.newFixedThreadPool(10), CarModel::new);
 	}
 }
+*/

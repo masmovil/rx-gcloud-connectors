@@ -36,7 +36,7 @@ public class SingleEntityIdCallbackHandlerTest {
 		DocumentReference doc = mock(DocumentReference.class);
 		var id = "bcjsrkjcwecw";
 
-		//var car = new CarModel("Toyota", "Land Cruiser", false);
+		//var car = new Vehicle("Toyota", "Land Cruiser", false);
 		doReturn(id).when(doc).getId();
 
 		singleEntityIdCallbackHandler.onSuccess(doc);
