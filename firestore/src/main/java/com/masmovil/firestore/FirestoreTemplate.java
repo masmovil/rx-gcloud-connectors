@@ -45,12 +45,6 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	private final ExecutorService rxJavaExecutor;
 	private final Supplier<? extends R> supplier;
-	private final SingleEntityIdCallbackHandler<K> singleEntityId;
-	private final SingleEntityCallbackHandler<R> entityCallbackHandler;
-	private final UpdateCallbackHandler updateCallbackHandler;
-	private final DeleteCallbackHandler deleteCallbackHandler;
-	private final QueryCallbackHandler queryCallbackHandler;
-	private final PartialUpdateCallbackHandler partialUpdateCallbackHandler;
 
 	/**
 	 * FirestoreTemplate constructor. You must call this method in your repository constructor.
@@ -74,12 +68,6 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 			rxJavaExecutor = executor; //Executors.newFixedThreadPool(threadPoolSize);
 			supplier = Objects.requireNonNull(entityConstructor);
-			singleEntityId = new SingleEntityIdCallbackHandler();
-			entityCallbackHandler = new SingleEntityCallbackHandler(supplier.get());
-			updateCallbackHandler = new UpdateCallbackHandler();
-			deleteCallbackHandler = new DeleteCallbackHandler();
-			queryCallbackHandler = new QueryCallbackHandler(supplier.get());
-			partialUpdateCallbackHandler = new PartialUpdateCallbackHandler();
 
 		}catch(IOException e){
 			throw new RuntimeException(e);
@@ -91,12 +79,6 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 			firestore = fs;
 			rxJavaExecutor = executor; //Executors.newFixedThreadPool(threadPoolSize);
 			supplier = Objects.requireNonNull(entityConstructor);
-			singleEntityId = new SingleEntityIdCallbackHandler();
-			entityCallbackHandler = new SingleEntityCallbackHandler(supplier.get());
-			updateCallbackHandler = new UpdateCallbackHandler();
-			deleteCallbackHandler = new DeleteCallbackHandler();
-			queryCallbackHandler = new QueryCallbackHandler(supplier.get());
-			partialUpdateCallbackHandler = new PartialUpdateCallbackHandler();
 	}
 
 	/**
@@ -110,7 +92,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 	 * */
 
 	public Single<K> insert(final E entity){
-
+		SingleEntityIdCallbackHandler<K> singleEntityId = new SingleEntityIdCallbackHandler();
 		ApiFuture<DocumentReference> response = firestore.collection(entity.getCollectionName()).add(entity.toMap());
 		ApiFutures.addCallback(response, singleEntityId, rxJavaExecutor);
 
@@ -149,6 +131,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<Boolean> upsert(final E entity, final K id){
 
+		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 		ApiFuture<WriteResult> response = firestore.collection(entity.getCollectionName()).document(id).set(entity.toMap());
 		ApiFutures.addCallback(response, updateCallbackHandler, rxJavaExecutor);
 
@@ -177,6 +160,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<Boolean> upsert(final SetOptions options, final E entity, final K id){
 
+		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 		ApiFuture<WriteResult> response = firestore.collection(entity.getCollectionName()).document(id).set(entity.toMap(), options);
 		ApiFutures.addCallback(response, updateCallbackHandler, rxJavaExecutor);
 
@@ -194,6 +178,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<R> get(final K id, final String collectionName){
 
+		SingleEntityCallbackHandler<R> entityCallbackHandler = new SingleEntityCallbackHandler(supplier.get());
 		ApiFuture<DocumentSnapshot> response = firestore.collection(collectionName).document(id).get();
 		ApiFutures.addCallback(response, entityCallbackHandler, rxJavaExecutor);
 
@@ -251,6 +236,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<List<R>> get(final Query query){
 
+		QueryCallbackHandler queryCallbackHandler = new QueryCallbackHandler(supplier.get());
 		ApiFuture<QuerySnapshot> response = query.get();
 		ApiFutures.addCallback(response, queryCallbackHandler, rxJavaExecutor);
 
@@ -267,6 +253,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<Boolean> update(final K id, final E entity){
 
+		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 		ApiFuture<WriteResult> response = firestore.collection(entity.getCollectionName()).document(id).update(entity.toMap());
 		ApiFutures.addCallback(response, updateCallbackHandler, rxJavaExecutor);
 
@@ -284,6 +271,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<Boolean> update(final Precondition precondition, final K id, final E entity){
 
+		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 		ApiFuture<WriteResult> response = firestore.collection(entity.getCollectionName()).document(id).update(entity.toMap(), precondition);
 		ApiFutures.addCallback(response, updateCallbackHandler, rxJavaExecutor);
 
@@ -303,6 +291,8 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<Boolean> update(final K id, final String collectionName, final HashMap<String, Object> fields){
 
+		PartialUpdateCallbackHandler partialUpdateCallbackHandler = new PartialUpdateCallbackHandler();
+		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 		HashMap<String, Single<Boolean>> result = new HashMap();
 		ApiFuture<HashMap<String, Single<Boolean>>> transactionResponse = firestore.runTransaction(transaction -> {
 			for (Map.Entry<String, Object> entry : fields.entrySet()){
@@ -329,6 +319,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<Boolean> delete(final K id, final String collectionName){
 
+		DeleteCallbackHandler deleteCallbackHandler = new DeleteCallbackHandler();
 		ApiFuture<WriteResult> response = firestore.collection(collectionName).document(id).delete();
 		ApiFutures.addCallback(response, deleteCallbackHandler, rxJavaExecutor);
 
@@ -346,6 +337,7 @@ public abstract class FirestoreTemplate<K extends String,E extends Entity, R ext
 
 	public Single<Boolean> delete(final Precondition precondition, final K id, final String collectionName){
 
+		DeleteCallbackHandler deleteCallbackHandler = new DeleteCallbackHandler();
 		ApiFuture<WriteResult> response = firestore.collection(collectionName).document(id).delete(precondition);
 		ApiFutures.addCallback(response, deleteCallbackHandler, rxJavaExecutor);
 
