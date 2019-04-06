@@ -1,15 +1,16 @@
-# RxFirestore (Alpha - 1.0.1-SNAPSHOT)
+# RxFirestore (Alpha)
 <img align="right" src="https://github.com/masmovil/rx-gcloud-connectors/blob/master/firestore/firestoreLogo.png">
+
+This SDK is a Java Reactive `Firestore` connector.
 
 Google Cloud Firestore is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
 While the Cloud Firestore interface has many of the same features as traditional databases, as a NoSQL database it differs from them in the way it describes relationships between data objects.
 
-This SDK is a Java Reactive `Firestore` connector.
 
 ## Index
 
-- [Motivations](#motivations)
-  - [Design approach Version 1.0.1](#Designa-approach-version-1.0.1)
+- [Motivation](#motivation)
+  - [Design approach Version 1.0.1](#Design-approach-version-1.0.1)
 - [Minimum Requirements](#minimum-requirements)
 - [Maven useful commands](#maven-useful-commands)
 - [How to use it](#How-to-use-it)
