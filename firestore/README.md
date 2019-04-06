@@ -10,7 +10,7 @@ While the Cloud Firestore interface has many of the same features as traditional
 ## Index
 
 - [Motivation](#motivation)
-  - [Design approach Version 1.0.1](#design-approach-version-1.0.1)
+  - [Design approach Version 1.0.1](#design-approach)
 - [Minimum Requirements](#minimum-requirements)
 - [Maven useful commands](#maven-useful-commands)
 - [How to use it](#How-to-use-it)
@@ -31,7 +31,7 @@ This implementation, fails to meet today’s requirement of concurrency, in part
 applications usually allow up to millions of transactions, users or sessions. However, the number of threads supported by the kernel is much less. Thus, a Thread for every user,
 transaction, or session is often not feasible. To sum up, OS kernel threads is insufficient for meeting modern demands, and wasteful in computing resources that are particularly valuable in the cloud.
 
-### Design approach Version 1.0.1
+### Design approach
 
 Our first solution to meet motivation requirements, is the use of asynchronous concurrent APIs. Common examples are CompletableFuture and RxJava.
 Provided that such APIs don’t block the kernel thread, it gives an application a finer-grained concurrency construct on top of Java threads. However, at the end of the day we will have to use the blocking SDK defined by google,
