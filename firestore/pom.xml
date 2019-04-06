@@ -14,7 +14,7 @@
     <groupId>com.masmovil.gcloud</groupId>
     <artifactId>firestore</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -37,6 +37,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-rx-java2</artifactId>
             <version>${vertx.version}</version>
@@ -44,9 +50,22 @@
         </dependency>
 
         <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-firestore</artifactId>
             <version>${firestore.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.2.2</version>
+            <classifier>no_aop</classifier>
         </dependency>
 
 
@@ -83,21 +102,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-core</artifactId>
-            <version>1.21</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-generator-annprocess</artifactId>
-            <version>1.21</version>
-            <scope>test</scope>
-        </dependency>
-
-
     </dependencies>
 
     <build>
@@ -120,7 +124,7 @@
     <profiles>
 
         <profile>
-            <id>firestore-microbenchmark</id>
+            <id>firestore-example</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -142,7 +146,7 @@
                                 </goals>
                                 <configuration>
                                     <sources>
-                                        <source>src/microbenchmark/java</source>
+                                        <source>src/example/java</source>
                                     </sources>
                                 </configuration>
                             </execution>
@@ -155,7 +159,7 @@
                                 <configuration>
                                     <resources>
                                         <resource>
-                                            <directory>src/microbenchmark/resources</directory>
+                                            <directory>src/example/resources</directory>
                                         </resource>
                                     </resources>
                                 </configuration>
