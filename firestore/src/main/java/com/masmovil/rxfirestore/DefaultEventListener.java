@@ -1,4 +1,4 @@
-package com.masmovil.firestore;
+package com.masmovil.rxfirestore;
 
 import java.util.Objects;
 import java.util.Optional;

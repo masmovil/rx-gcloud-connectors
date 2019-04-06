@@ -1,8 +1,8 @@
-package com.masmovil.firestore;
+package com.masmovil.rxfirestore;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.api.core.ApiFutureCallback;
@@ -10,16 +10,12 @@ import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 
+import io.reactivex.Observable;
 import io.reactivex.subjects.SingleSubject;
 
-public class QueryCallbackHandler <E extends Entity> implements ApiFutureCallback<QuerySnapshot> {
+public class QueryCallbackHandler implements ApiFutureCallback<QuerySnapshot> {
 
-	private SingleSubject<List<E>> entities = SingleSubject.create();
-	private Entity response;
-
-	public QueryCallbackHandler(Entity response){
-		this.response = Objects.requireNonNull(response);
-	}
+	private SingleSubject<List<Map<String, Object>>> entities = SingleSubject.create();
 
 	@Override
 	public void onFailure(Throwable throwable) {
@@ -28,18 +24,18 @@ public class QueryCallbackHandler <E extends Entity> implements ApiFutureCallbac
 
 	@Override
 	public void onSuccess(QuerySnapshot futureDocuments) {
-		List<E> result = new ArrayList<>();
+		List<Map<String, Object>> result = new ArrayList<>();
 		List<QueryDocumentSnapshot> documents =  futureDocuments.getDocuments();
 		for (DocumentSnapshot document : documents) {
 			var data = document.getData();
 			data.put("_id", Optional.ofNullable(document.getId()).orElse("NONE"));
-			result.add((E)response.fromJsonAsMap(data));
+			result.add(data);
 		}
 
 		entities.onSuccess(result);
 	}
 
-	public SingleSubject<List<E>> getEntities() {
+	public SingleSubject<List<Map<String, Object>>> getEntities() {
 		return entities;
 	}
 }

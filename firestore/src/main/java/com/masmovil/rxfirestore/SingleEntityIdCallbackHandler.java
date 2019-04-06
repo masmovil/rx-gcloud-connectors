@@ -1,4 +1,4 @@
-package com.masmovil.firestore;
+package com.masmovil.rxfirestore;
 
 import com.google.api.core.ApiFutureCallback;
 import com.google.cloud.firestore.DocumentReference;

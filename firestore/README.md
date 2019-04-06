@@ -1,6 +1,45 @@
-# Firestore
+# RxFirestore (Alpha - 1.0.1-SNAPSHOT)
 <img align="right" src="https://github.com/masmovil/rx-gcloud-connectors/blob/master/firestore/firestoreLogo.png">
-Java Reactive `Firestore` connector.
+
+Google Cloud Firestore is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
+While the Cloud Firestore interface has many of the same features as traditional databases, as a NoSQL database it differs from them in the way it describes relationships between data objects.
+
+This SDK is a Java Reactive `Firestore` connector.
+
+## Index
+
+- [Motivations](#motivations)
+  - [Design approach Version 1.0.1](#Designa-approach-version-1.0.1)
+- [Minimum Requirements](#minimum-requirements)
+- [Maven useful commands](#maven-useful-commands)
+- [How to use it](#How-to-use-it)
+- [API methods](#API-methods)
+  - [Insert](#insert)
+  - [Empty](#empty)
+  - [Upsert](#upsert)
+  - [Get](#get)
+  - [Query Builder](#query-builder)
+  - [Run Query](#run-query)
+  - [Update](#update)
+  - [Delete](#delete)
+
+## Motivation
+
+Java Firestore SDK provided by Google it's implemented in a traditional way, through OS kernel threads. This is a very expensive way to give us a concurrency abstraction.
+This implementation, fails to meet today’s requirement of concurrency, in particular threads cannot match the scale of the domain’s unit of concurrency. For example,
+applications usually allow up to millions of transactions, users or sessions. However, the number of threads supported by the kernel is much less. Thus, a Thread for every user,
+transaction, or session is often not feasible. To sum up, OS kernel threads is insufficient for meeting modern demands, and wasteful in computing resources that are particularly valuable in the cloud.
+
+### Design approach Version 1.0.1
+
+Our first solution to meet motivation requirements, is the use of asynchronous concurrent APIs. Common examples are CompletableFuture and RxJava.
+Provided that such APIs don’t block the kernel thread, it gives an application a finer-grained concurrency construct on top of Java threads. However, at the end of the day we will have to use the blocking SDK defined by google,
+so we have to think in a manner that allow us to mitigate use OS kernel threads in a per request/user way, and at the same time allow us to scale in order to meet today’s requirement of concurrency.
+
+<img align="center" src="https://github.com/masmovil/rx-gcloud-connectors/blob/master/firestore/RxFirestoreSDK.png">
+
+We've decided to handler all the user request through a reactive facade that will dispatch all the event to a in memory event bus (a buffer) in order to handler backpreasure and decouples I/O computation from the thread that invoked the operation.
+This event bus will be consumed by a Vertx Actor (Worker Verticle), executing all of this commands in a synchronous or asynchronous way, running within a ThreadPool.
 
 ## Minimum Requirements
 
@@ -9,39 +48,40 @@ Java Reactive `Firestore` connector.
 
 ## Maven useful commands
 
-* build firestore project: ```mvn -pl .,firestore clean install```
-* deploy firestore SDK into nexus: ```mvn -pl firestore deploy```
+* build RxFirestore project: ```mvn -pl .,rxfirestore clean install -DskipTests```
+* deploy RxFirestore SDK into nexus: ```mvn -pl rxfirestore deploy -DskipTests```
 
 ## How to use it
 
-Add in your pom the following dependency:
+1. Add in your pom the following dependency:
 
 ```
-        <dependency>
-            <groupId>com.masmovil.gcloud</groupId>
-            <artifactId>firestore</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
+ <dependency>
+    <groupId>com.masmovil.gcloud</groupId>
+    <artifactId>firestore</artifactId>
+    <version>1.0.1-SNAPSHOT</version>
+ </dependency>
 ```
 
-Create your own repository and extends `FirestoreTemplate`. You must provide your Key, model and return type as parameters.
+2. Create your own repository and extends `RxFirestoreSDK`. You must provide your entity model as parameters.
 
 for example:
-
 Imagine that you have a garage, and you would like to manage your vehicles catalog.
 
 ```
-public class CarsRepository extends FirestoreTemplate<String, CarModel, CarModel> {
+public class VehicleRepository extends RxFirestoreSDK<Vehicle> {
 
-	public CarsRepository(String keyPath, int threadPoolSize) {
-		super(keyPath, Executors.newFixedThreadPool(10), CarModel::new);
+	public VehicleRepository() {
+		super(Vehicle::new);
 	}
+
 }
 ```
 
-That it's all the code that you need in order to instantiate firestore connector. Where Keypath means the path of your Gcloud credentials and threadPoolSize the amount of threads that you would like to use in this repository tasks.
+3. Add `GCLOUD_KEY_PATH` environment variable to your project, pointing to your keyfile.json
 
-## Methods
+
+## API methods
 
 ### Insert
 
@@ -50,7 +90,7 @@ ordering. If you want to be able to order your documents by creation date, you s
 field in the documents.
 
 ```
-Single<K> insert(final E entity)
+Single<String> insert(final E entity)
 ```
 
 ### Empty
@@ -60,7 +100,7 @@ In some cases, it can be useful to create a document reference with an auto-gene
 then use the reference later through a upsert method.
 
 ```
-Single<K> empty(final String collectionName)
+Single<String> empty(final String collectionName)
 ```
 
 ### Upsert
@@ -73,26 +113,7 @@ isn't a meaningful ID for the document, and it's more convenient to let Cloud Fi
 you. You can do this by calling empty.
 
 ```
-Single<Boolean> upsert(final E entity, final K id)
-```
-
-### Upsert with options
-
-
-If the document does not exist, it will be created. If the document does exist, its contents will be overwritten
-with the newly provided data unless you specify that the data should be merged into the existing document.
-
-example: ```upsert(SetOptions.merge(), vehicle, "adf12we60rx")```
-
-If you're not sure whether the document exists, pass the option to merge the new data with any existing document
-to avoid overwriting entire documents.
-
-When you use upsert to create or update a document, you must specify an ID for the document. But sometimes there
-isn't a meaningful ID for the document, and it's more convenient to let Cloud Firestore auto-generate an ID for
-you. You can do this by calling insert.
-
-```
-Single<Boolean> upsert(final SetOptions options, final E entity, final K id)
+Single<Boolean> upsert(final String id, final String collectionName, final E entity)
 ```
 
 ### Get
@@ -100,7 +121,7 @@ Single<Boolean> upsert(final SetOptions options, final E entity, final K id)
 Get will retrieve a Document by ID for a given collection name.
 
 ```
-Single<R> get(final K id, final String collectionName)
+Single<E> get(final String id, final String collectionName)
 ```
 
 ### Query Builder
@@ -108,68 +129,30 @@ Single<R> get(final K id, final String collectionName)
 Query builder allow you to develop your own query with where statement. Use in combination with get in order to
 develop complex inferences.
 
+```
+Single<Query> queryBuilder(final String collectionName)
+```
+
 example:
 ```
 var query = carsRepository.queryBuilder(CarModel.CARS_COLLECTION_NAME).whereEqualTo("brand","Toyota");
 ```
 
-```
-Query queryBuilder(final String collectionName)
-```
 
 ### Run Query
 
 get will retrieve a List of Documents by a given query.
 
 ```
-Single<List<R>> get(final Query query)
+Single<List<E>> get(Query query)
 ```
-
-### Add Query Listener
-
-AddQueryListener, You can listen to a document changes (create, update and delete).
-
-An "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query,
-and then all the changes until you close your listener.
-
-example:
-```
-listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));
-
-// finally after all you could close your connection
-listener.getRegistration().remove();
-```
-
-```
-EventListenerResponse<R> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler)
-```
-
 
 ### Update
 
 Update full document (overwrite).
 
 ```
-Single<Boolean> update(final K id, final E entity)
-```
-
-### Update with preconditions
-
-Update full document with a given precondition.
-
-```
-Single<Boolean> update(final Precondition precondition, final K id, final E entity)
-```
-
-
-### Partial update
-
-To update some fields of a document without overwriting the entire document, use update.
-If your document contains nested objects, you can use "dot notation" to reference nested fields within the
-document when you call update.
-
-```
-Single<Boolean> update(final K id, final String collectionName, final HashMap<String, Object> fields)
+ Single<Boolean> update(final String id, final String collectionName, final E entity)
 ```
 
 
@@ -178,19 +161,5 @@ Single<Boolean> update(final K id, final String collectionName, final HashMap<St
 To delete a document, use the delete method. Deleting a document does not delete its subcollections!
 
 ```
-Single<Boolean> delete(final K id, final String collectionName)
+Single<Boolean> delete(final String id, final String collectionName)
 ```
-
-### Delete with preconditions
-
-To delete a document with some given preconditions.
-
-```
-Single<Boolean> delete(final Precondition precondition, final K id, final String collectionName)
-```
-
-
-## How to contribute
-
-Anyone could create a branch from master and create a PR.
-This PR should have a description, and also unitTest. The solution must be reactive (callback hell, rxJava, verticles/actors, promises as completable futures, listeners... hooks) and documented.

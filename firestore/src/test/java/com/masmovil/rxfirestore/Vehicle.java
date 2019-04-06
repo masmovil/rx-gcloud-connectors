@@ -1,9 +1,9 @@
-package com.masmovil.firestore;
+package com.masmovil.rxfirestore;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class CarModel implements Entity {
+public class Vehicle implements Entity {
 
 	public final static String CARS_COLLECTION_NAME = "cars";
 	public final static String BRAND = "brand";
@@ -17,9 +17,9 @@ public class CarModel implements Entity {
 	private String model;
 	private Boolean electric;
 
-	public CarModel(){}
+	public Vehicle(){}
 
-	public CarModel(String brand, String model, Boolean electric){
+	public Vehicle(String brand, String model, Boolean electric){
 		this.brand = brand;
 		this.model = model;
 		this.electric = electric;

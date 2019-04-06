@@ -1,6 +1,6 @@
-package com.masmovil.firestore;
+package com.masmovil.rxfirestore;
 
-import java.util.Objects;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.api.core.ApiFutureCallback;
@@ -8,14 +8,9 @@ import com.google.cloud.firestore.DocumentSnapshot;
 
 import io.reactivex.subjects.SingleSubject;
 
-public class SingleEntityCallbackHandler<E extends Entity> implements ApiFutureCallback<DocumentSnapshot> {
+public class SingleEntityCallbackHandler implements ApiFutureCallback<DocumentSnapshot> {
 
-	private SingleSubject<E> entity = SingleSubject.create();
-	private Entity response;
-
-	public SingleEntityCallbackHandler(Entity response){
-		this.response = Objects.requireNonNull(response);
-	}
+	private SingleSubject<Map<String, Object>> entity = SingleSubject.create();
 
 	@Override
 	public void onFailure(Throwable throwable) {
@@ -27,13 +22,13 @@ public class SingleEntityCallbackHandler<E extends Entity> implements ApiFutureC
 		if (document.exists()) {
 			var data = document.getData();
 			data.put("_id", Optional.ofNullable(document.getId()).orElse("NONE"));
-			entity.onSuccess((E)response.fromJsonAsMap(data));
+			entity.onSuccess(data);
 		}else{
 			entity.onError(new RuntimeException("Not Found"));
 		}
 	}
 
-	public SingleSubject<E> getEntity() {
+	public SingleSubject<Map<String, Object>> getEntity() {
 		return entity;
 	}
 
