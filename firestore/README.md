@@ -10,7 +10,7 @@ While the Cloud Firestore interface has many of the same features as traditional
 ## Index
 
 - [Motivation](#motivation)
-  - [Design approach Version 1.0.1](#Design-approach-version-1.0.1)
+  - [Design approach Version 1.0.1](#design-approach-version-1.0.1)
 - [Minimum Requirements](#minimum-requirements)
 - [Maven useful commands](#maven-useful-commands)
 - [How to use it](#How-to-use-it)
