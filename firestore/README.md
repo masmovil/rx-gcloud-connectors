@@ -10,7 +10,7 @@ While the Cloud Firestore interface has many of the same features as traditional
 ## Index
 
 - [Motivation](#motivation)
-  - [Design approach Version 1.0.2](#design-approach)
+  - [Design approach Version 1.0.3](#design-approach)
 - [Minimum Requirements](#minimum-requirements)
 - [Maven useful commands](#maven-useful-commands)
 - [How to use it](#How-to-use-it)
@@ -60,7 +60,7 @@ This event bus will be consumed by a Vertx Actor (Worker Verticle), executing al
  <dependency>
     <groupId>com.masmovil.gcloud</groupId>
     <artifactId>firestore</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.3-SNAPSHOT</version>
  </dependency>
 ```
 
@@ -157,6 +157,17 @@ get will retrieve a List of Documents by a given query.
 ```
 Single<List<E>> get(Query query)
 ```
+
+### Run Query Listener
+
+addQueryListener, You can listen to a document changes (create, update and delete).
+```
+EventListenerResponse<E> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler)
+```
+
+EventListenerResponse will allow you subscribe to a query `listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));` and also close your connection `listener.getRegistration().remove();`
+
+*Note:* this method is a *BLOCKING* operation, so a new thread will be created per listener.
 
 ### Update
 

@@ -13,12 +13,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.SerializationUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.cloud.firestore.EventListener;
+import com.google.cloud.firestore.QuerySnapshot;
 
+import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.Json;
@@ -40,15 +44,18 @@ public class RxFirestoreSDK<E extends Entity> {
 
 	private final static long SEND_TIMEOUT_MS = 59000;
 	private final Supplier<? extends Entity> supplier;
+	private final BlockingFirestoreTemplate blockingFirestoreTemplate;
 
 	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor){
 		supplier = Objects.requireNonNull(entityConstructor);
 		FirestoreTemplateFactory.INSTANCE.init();
+		blockingFirestoreTemplate = new BlockingFirestoreTemplate(supplier, FirestoreTemplateFactory.INSTANCE.getVertx());
 	}
 
 	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor, Vertx vertx){
 		supplier = Objects.requireNonNull(entityConstructor);
 		FirestoreTemplateFactory.INSTANCE.init(vertx);
+		blockingFirestoreTemplate = new BlockingFirestoreTemplate(supplier, vertx);
 	}
 
 	/**
@@ -225,6 +232,30 @@ public class RxFirestoreSDK<E extends Entity> {
 				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> Boolean.valueOf(message));
+	}
+
+	/**
+	 * addQueryListener, You can listen to a document changes (create, update and delete).
+	 *
+	 * @param query         to subscribe. Build your query with queryBuilder method.
+	 * @param eventsHandler will handler document changes. By default we provide an eventHandler that will give you a Flowable with all the document changes.
+	 * @return EventListenerResponse, contains two object.
+	 * "registration" will allow you to close the event flow and eventsFlow that will give you an events Flowable
+	 * <p>
+	 * example:
+	 * <p>
+	 * listener.getRegistration().remove();
+	 * <p>
+	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query,
+	 * and then all the changes until you close your listener.
+	 * <p>
+	 * example:
+	 * <p>
+	 * listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));
+	 */
+
+	public EventListenerResponse<E> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler) {
+		return blockingFirestoreTemplate.addQueryListener(query, eventsHandler);
 	}
 
 }

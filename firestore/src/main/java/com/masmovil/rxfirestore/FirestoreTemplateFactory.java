@@ -20,8 +20,9 @@ public enum FirestoreTemplateFactory {
 	private final static long MAX_EXECUTION_TIME_SEC = 30;
 
 	private EventBus eventBus;
+	private Vertx vertx;
 
-	public void init(Vertx ...vertx){
+	public void init(Vertx ...vertxArg){
 
 		EventBusOptions eventBusOpt = new EventBusOptions();
 
@@ -40,7 +41,7 @@ public enum FirestoreTemplateFactory {
 				.setMaxWorkerExecuteTime(MAX_EXECUTION_TIME_SEC)
 				.setMaxWorkerExecuteTimeUnit(TimeUnit.SECONDS);
 
-		if(vertx.length == 0){
+		if(vertxArg.length == 0){
 			// Hack in order to avoid a noisy blocked thread exception at initialization time. Only happens once.
 			DefaultChannelId.newInstance();
 
@@ -48,11 +49,12 @@ public enum FirestoreTemplateFactory {
 			List<DeploymentOptions> deploymentOptionsList = Arrays.asList(firestoreWorkerDeploymentOptions);
 
 			var vertxInstance = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
-
 			eventBus = vertxInstance.eventBus();
+			vertx = vertxInstance;
 		}else{
-			vertx[0].deployVerticle(FirestoreTemplate.class.getName(), firestoreWorkerDeploymentOptions);
-			eventBus = vertx[0].eventBus();
+			vertxArg[0].deployVerticle(FirestoreTemplate.class.getName(), firestoreWorkerDeploymentOptions);
+			eventBus = vertxArg[0].eventBus();
+			vertx = vertxArg[0];
 		}
 	}
 
@@ -60,4 +62,7 @@ public enum FirestoreTemplateFactory {
 		return eventBus;
 	}
 
+	public Vertx getVertx() {
+		return vertx;
+	}
 }
