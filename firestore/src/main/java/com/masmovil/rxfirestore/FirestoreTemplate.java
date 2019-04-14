@@ -199,7 +199,21 @@ public class FirestoreTemplate extends AbstractVerticle {
 			Iterator arrayContainsIt = arrayContains.entrySet().iterator();
 			while (arrayContainsIt.hasNext()) {
 				Map.Entry pair = (Map.Entry) arrayContainsIt.next();
-				queryBuilder = queryBuilder.whereEqualTo((String)pair.getKey(), pair.getValue());
+				queryBuilder = queryBuilder.whereArrayContains((String)pair.getKey(), pair.getValue());
+			}
+
+			var greaterThan = query.getGreaterThan();
+			Iterator greaterThanIt = greaterThan.entrySet().iterator();
+			while (greaterThanIt.hasNext()) {
+				Map.Entry pair = (Map.Entry) greaterThanIt.next();
+				queryBuilder = queryBuilder.whereGreaterThan((String)pair.getKey(), pair.getValue());
+			}
+
+			var lessThan = query.getLessThan();
+			Iterator lessThanIt = lessThan.entrySet().iterator();
+			while (lessThanIt.hasNext()) {
+				Map.Entry pair = (Map.Entry) lessThanIt.next();
+				queryBuilder = queryBuilder.whereLessThan((String)pair.getKey(), pair.getValue());
 			}
 
 			var queryCallbackHandler = new QueryCallbackHandler();

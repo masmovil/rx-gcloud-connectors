@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.reactivex.Single;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.Json;
+import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.Message;
 
 /**
@@ -42,6 +43,12 @@ public class RxFirestoreSDK<E extends Entity> {
 
 	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor){
 		supplier = Objects.requireNonNull(entityConstructor);
+		FirestoreTemplateFactory.INSTANCE.init();
+	}
+
+	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor, Vertx vertx){
+		supplier = Objects.requireNonNull(entityConstructor);
+		FirestoreTemplateFactory.INSTANCE.init(vertx);
 	}
 
 	/**

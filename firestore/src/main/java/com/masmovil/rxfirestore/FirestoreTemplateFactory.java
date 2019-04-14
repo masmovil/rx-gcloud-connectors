@@ -10,6 +10,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.EventBus;
 
 public enum FirestoreTemplateFactory {
@@ -18,13 +19,9 @@ public enum FirestoreTemplateFactory {
 
 	private final static long MAX_EXECUTION_TIME_SEC = 30;
 
-	private final EventBus eventBus;
+	private EventBus eventBus;
 
-
-	FirestoreTemplateFactory(){
-
-		// Hack in order to avoid a noisy blocked thread exception at initialization time. Only happens once.
-		DefaultChannelId.newInstance();
+	public void init(Vertx ...vertx){
 
 		EventBusOptions eventBusOpt = new EventBusOptions();
 
@@ -43,12 +40,20 @@ public enum FirestoreTemplateFactory {
 				.setMaxWorkerExecuteTime(MAX_EXECUTION_TIME_SEC)
 				.setMaxWorkerExecuteTimeUnit(TimeUnit.SECONDS);
 
-		List<Class<? extends AbstractVerticle>> verticleList = Arrays.asList(FirestoreTemplate.class);
-		List<DeploymentOptions> deploymentOptionsList = Arrays.asList(firestoreWorkerDeploymentOptions);
+		if(vertx.length == 0){
+			// Hack in order to avoid a noisy blocked thread exception at initialization time. Only happens once.
+			DefaultChannelId.newInstance();
 
-		var vertx = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
-		eventBus = vertx.eventBus();
+			List<Class<? extends AbstractVerticle>> verticleList = Arrays.asList(FirestoreTemplate.class);
+			List<DeploymentOptions> deploymentOptionsList = Arrays.asList(firestoreWorkerDeploymentOptions);
 
+			var vertxInstance = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
+
+			eventBus = vertxInstance.eventBus();
+		}else{
+			vertx[0].deployVerticle(FirestoreTemplate.class.getName(), firestoreWorkerDeploymentOptions);
+			eventBus = vertx[0].eventBus();
+		}
 	}
 
 	public EventBus getEventBus() {
