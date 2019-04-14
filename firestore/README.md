@@ -10,7 +10,7 @@ While the Cloud Firestore interface has many of the same features as traditional
 ## Index
 
 - [Motivation](#motivation)
-  - [Design approach Version 1.0.1](#design-approach)
+  - [Design approach Version 1.0.2](#design-approach)
 - [Minimum Requirements](#minimum-requirements)
 - [Maven useful commands](#maven-useful-commands)
 - [How to use it](#How-to-use-it)
@@ -60,7 +60,7 @@ This event bus will be consumed by a Vertx Actor (Worker Verticle), executing al
  <dependency>
     <groupId>com.masmovil.gcloud</groupId>
     <artifactId>firestore</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
  </dependency>
 ```
 
@@ -76,6 +76,16 @@ public class VehicleRepository extends RxFirestoreSDK<Vehicle> {
 		super(Vehicle::new);
 	}
 
+}
+```
+
+In case you are running this SDK under Vertx toolbox you could pass your vertx context as a parameter, and by this way will be reused.
+```
+public class VehicleRepository extends RxFirestoreSDK<Vehicle> {
+
+	public VehicleRepository() {
+		super(Vehicle::new, Vertx.currentContext().owner());
+	}
 }
 ```
 
