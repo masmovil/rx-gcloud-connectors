@@ -8,6 +8,8 @@ public class Query implements Serializable {
 	private final String collectionName;
 	private HashMap<String, Object> equalTo = new HashMap<>();
 	private HashMap<String, Object> arrayContains = new HashMap<>();
+	private HashMap<String,Object> greaterThan = new HashMap<>();
+	private HashMap<String,Object> lessThan = new HashMap<>();
 	private Integer limit;
 	private Integer offset;
 	private boolean limitSet;
@@ -19,6 +21,16 @@ public class Query implements Serializable {
 
 	public Query whereEqualTo(String field, Object value){
 		equalTo.put(field, value);
+		return this;
+	}
+
+	public Query whereGreaterThan(String field, Object value){
+		greaterThan.put(field, value);
+		return this;
+	}
+
+	public Query whereLessThan(String field, Object value){
+		lessThan.put(field, value);
 		return this;
 	}
 
@@ -65,5 +77,13 @@ public class Query implements Serializable {
 
 	public HashMap<String, Object> getArrayContains() {
 		return arrayContains;
+	}
+
+	public HashMap<String, Object> getGreaterThan() {
+		return greaterThan;
+	}
+
+	public HashMap<String, Object> getLessThan() {
+		return lessThan;
 	}
 }
