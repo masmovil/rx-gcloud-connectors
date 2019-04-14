@@ -1,5 +1,6 @@
 package com.masmovil.rxfirestore;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,21 +34,21 @@ public class DefaultEventListener<E extends Entity> implements EventListener<Que
 		for (DocumentChange dc : snapshots.getDocumentChanges()) {
 			switch (dc.getType()) {
 			case ADDED:
-				var dataAdded = dc.getDocument().getData();
+				Map<String, Object> dataAdded = dc.getDocument().getData();
 				dataAdded.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
 				dataAdded.put("_eventType",DocumentChange.Type.ADDED.toString());
 				source.onNext((E)response.fromJsonAsMap(dataAdded));
 				break;
 
 			case MODIFIED:
-				var dataUpdated = dc.getDocument().getData();
+				Map<String, Object> dataUpdated = dc.getDocument().getData();
 				dataUpdated.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
 				dataUpdated.put("_eventType",DocumentChange.Type.MODIFIED.toString());
 				source.onNext((E)response.fromJsonAsMap(dataUpdated));
 				break;
 
 			case REMOVED:
-				var dataRemoved = dc.getDocument().getData();
+				Map<String, Object> dataRemoved = dc.getDocument().getData();
 				dataRemoved.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
 				dataRemoved.put("_eventType",DocumentChange.Type.REMOVED.toString());
 				source.onNext((E)response.fromJsonAsMap(dataRemoved));

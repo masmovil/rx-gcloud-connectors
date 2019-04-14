@@ -1,5 +1,5 @@
 package com.masmovil.rxfirestore;
-
+/*
 import org.junit.jupiter.api.Test;
 
 import io.reactivex.Observable;
@@ -29,7 +29,7 @@ public class RxFirestoreUpdateIT {
 		testObserver.assertNoErrors();
 		testObserver.assertNever(r -> r == false);
 	}
-
+*/
 /*
 	@Ignore
 	@Test
@@ -54,4 +54,4 @@ public class RxFirestoreUpdateIT {
 
 
 */
-}
+//}

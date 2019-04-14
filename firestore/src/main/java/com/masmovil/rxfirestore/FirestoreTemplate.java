@@ -1,5 +1,7 @@
 package com.masmovil.rxfirestore;
 
+import static io.vertx.ext.sync.Sync.streamAdaptor;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
@@ -22,13 +25,16 @@ import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.WriteResult;
 import com.google.common.collect.ImmutableList;
 
+import co.paralleluniverse.fibers.Suspendable;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.Json;
-import io.vertx.reactivex.core.AbstractVerticle;
-import io.vertx.reactivex.core.eventbus.Message;
-import io.vertx.reactivex.core.eventbus.MessageConsumer;
+import io.vertx.ext.sync.HandlerReceiverAdaptor;
+import io.vertx.ext.sync.Sync;
+import io.vertx.ext.sync.SyncVerticle;
 
 
-public class FirestoreTemplate extends AbstractVerticle {
+public class FirestoreTemplate extends SyncVerticle {
 
 
 	public static final List<String> SCOPES = ImmutableList.of("https://www.googleapis.com/auth/datastore");
@@ -47,7 +53,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 		try {
 
-			var keyPath = Optional.ofNullable(System.getenv("GCLOUD_KEY_PATH")).orElseThrow(
+			String keyPath = Optional.ofNullable(System.getenv("GCLOUD_KEY_PATH")).orElseThrow(
 					() -> new IllegalArgumentException("GCLOUD_KEY_PATH is not set in the environment"));
 
 			firestoreBuilder = FirestoreOptions.newBuilder().setCredentials(
@@ -60,41 +66,70 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 
 	@Override
+	@Suspendable
 	public void start() {
-		var firestoreEventBus = vertx.eventBus();
+		EventBus firestoreEventBus = vertx.eventBus();
 
-		MessageConsumer<Object> insertConsumer = firestoreEventBus.localConsumer(TOPIC_INSERT);
-		insertConsumer.handler(this::handlerInsert);
+		HandlerReceiverAdaptor<Message<Object>> insertConsumer = streamAdaptor();
 
-		MessageConsumer<Object> emptyConsumer = firestoreEventBus.localConsumer(TOPIC_EMPTY);
-		emptyConsumer.handler(this::handlerEmpty);
+		firestoreEventBus.localConsumer(TOPIC_INSERT).handler( msg-> handlerInsert(msg));
+				/*message -> {
+			String _collectionName = message.headers().get("_collectionName");
+			HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
+			SingleEntityIdCallbackHandler singleEntityId = new SingleEntityIdCallbackHandler<String>();
+			//String id;
+			System.out.println(Thread.activeCount());
 
-		MessageConsumer<Object> upsertConsumer = firestoreEventBus.localConsumer(TOPIC_UPSERT);
-		upsertConsumer.handler(this::handlerUpsert);
+			vertx.<String>executeBlocking(future -> {
+				       System.out.println(Thread.activeCount());
+						try (Firestore db = firestoreBuilder.build().getService()) {
 
-		MessageConsumer<Object> getConsumer = firestoreEventBus.localConsumer(TOPIC_GET);
-		getConsumer.handler(this::handlerGet);
+							ApiFuture<DocumentReference> response = db.collection(_collectionName).add(entity);
+							future.complete(response.get().getId());
+							//ApiFutures.addCallback(response, singleEntityId, Runnable::run);
+							//id =  (String)singleEntityId.getEntityID().blockingGet();
+						} catch (Exception e) {
+							e.printStackTrace();
+							throw new RuntimeException(e.getMessage());
+						}
+					}, res -> {
+				            message.reply(res.result());
+					});*/
+			//System.out.println(Thread.activeCount());
+			//message.reply(id);
+			//handlerInsert(msg)
+		//});
 
-		MessageConsumer<Object> updateConsumer = firestoreEventBus.localConsumer(TOPIC_UPDATE);
-		updateConsumer.handler(this::handlerUpdate);
+		HandlerReceiverAdaptor<Message<Object>> emptyConsumer = streamAdaptor();
+		firestoreEventBus.localConsumer(TOPIC_EMPTY).handler(msg -> handlerEmpty(msg));
 
-		MessageConsumer<Object> deleteConsumer = firestoreEventBus.localConsumer(TOPIC_DELETE);
-		deleteConsumer.handler(this::handlerDelete);
+		HandlerReceiverAdaptor<Message<Object>> upsertConsumer = streamAdaptor();
+		firestoreEventBus.localConsumer(TOPIC_UPSERT).handler(msg -> handlerUpsert(msg));
 
-		MessageConsumer<byte[]> queryBuilderConsumer = firestoreEventBus.localConsumer(TOPIC_QUERY_BUILDER);
-		queryBuilderConsumer.handler(this::handlerQueryBuilder);
+		HandlerReceiverAdaptor<Message<Object>> getConsumer = streamAdaptor();
+		firestoreEventBus.localConsumer(TOPIC_GET).handler(msg -> handlerGet(msg));
 
-		MessageConsumer<byte[]> queryConsumer = firestoreEventBus.localConsumer(TOPIC_QUERY);
-		queryConsumer.handler(this::handlerQuery);
+		HandlerReceiverAdaptor<Message<Object>> updateConsumer = streamAdaptor();
+		firestoreEventBus.localConsumer(TOPIC_UPDATE).handler(msg -> handlerUpdate(msg));
+
+		HandlerReceiverAdaptor<Message<Object>> deleteConsumer = streamAdaptor();
+		firestoreEventBus.localConsumer(TOPIC_DELETE).handler(msg -> handlerDelete(msg));
+
+		HandlerReceiverAdaptor<Message<byte[]>> queryBuilderConsumer = streamAdaptor();
+		firestoreEventBus.<byte[]>localConsumer(TOPIC_QUERY_BUILDER).handler(msg -> handlerQueryBuilder(msg));
+
+		HandlerReceiverAdaptor<Message<byte[]>> queryConsumer = streamAdaptor();
+		firestoreEventBus.<byte[]>localConsumer(TOPIC_QUERY).handler(msg -> handlerQuery(msg));
 
 	}
 
 	public String insert(final HashMap<String, Object> entity, final String collectionName) {
 		try (Firestore db = firestoreBuilder.build().getService()) {
-			var singleEntityId = new SingleEntityIdCallbackHandler<String>();
+			SingleEntityIdCallbackHandler singleEntityId = new SingleEntityIdCallbackHandler<String>();
 			ApiFuture<DocumentReference> response = db.collection(collectionName).add(entity);
+			//DocumentReference df = response.get();
 			ApiFutures.addCallback(response, singleEntityId, Runnable::run);
-			return singleEntityId.getEntityID().blockingGet();
+			return (String)singleEntityId.getEntityID().blockingGet();
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(e.getMessage());
@@ -115,7 +150,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	public Boolean upsert(final HashMap<String, Object> entity, final String id, final String collectionName) {
 		try (Firestore db = firestoreBuilder.build().getService()) {
-			var updateCallbackHandler = new UpdateCallbackHandler();
+			UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 			ApiFuture<WriteResult> response = db.collection(collectionName).document(id).set(entity);
 			ApiFutures.addCallback(response, updateCallbackHandler, Runnable::run);
 			return updateCallbackHandler.isUpdated().blockingGet();
@@ -129,7 +164,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	public Map<String, Object> get(final String id, final String collectionName) {
 		try (Firestore db = firestoreBuilder.build().getService()) {
-			var entityCallbackHandler = new SingleEntityCallbackHandler();
+			SingleEntityCallbackHandler entityCallbackHandler = new SingleEntityCallbackHandler();
 			ApiFuture<DocumentSnapshot> response = db.collection(collectionName).document(id).get();
 			ApiFutures.addCallback(response, entityCallbackHandler, Runnable::run);
 			return entityCallbackHandler.getEntity().blockingGet();
@@ -175,7 +210,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	public List<Map<String, Object>> get(final Query query) {
 		try (Firestore db = firestoreBuilder.build().getService()) {
-			var q = db.collection(query.getCollectionName());
+			CollectionReference q = db.collection(query.getCollectionName());
 			com.google.cloud.firestore.Query queryBuilder;
 
 			if(query.isLimitSet()){
@@ -188,21 +223,21 @@ public class FirestoreTemplate extends AbstractVerticle {
 				queryBuilder.offset(query.getOffset());
 			}
 
-			var equalTo = query.getEqualTo();
+			HashMap<String,Object> equalTo = query.getEqualTo();
 			Iterator equalToIt = equalTo.entrySet().iterator();
 			while (equalToIt.hasNext()) {
 				Map.Entry pair = (Map.Entry) equalToIt.next();
 				queryBuilder = queryBuilder.whereEqualTo((String)pair.getKey(), pair.getValue());
 			}
 
-			var arrayContains = query.getArrayContains();
+			HashMap<String,Object> arrayContains = query.getArrayContains();
 			Iterator arrayContainsIt = arrayContains.entrySet().iterator();
 			while (arrayContainsIt.hasNext()) {
 				Map.Entry pair = (Map.Entry) arrayContainsIt.next();
 				queryBuilder = queryBuilder.whereEqualTo((String)pair.getKey(), pair.getValue());
 			}
 
-			var queryCallbackHandler = new QueryCallbackHandler();
+			QueryCallbackHandler queryCallbackHandler = new QueryCallbackHandler();
 			ApiFuture<QuerySnapshot> response = queryBuilder.get();
 			ApiFutures.addCallback(response, queryCallbackHandler, Runnable::run);
 
@@ -216,7 +251,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	public Boolean update(final String id, final String collectionName, final HashMap<String, Object> entity) {
 		try (Firestore db = firestoreBuilder.build().getService()) {
-			var updateCallbackHandler = new UpdateCallbackHandler();
+			UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 			ApiFuture<WriteResult> response = db.collection(collectionName).document(id).update(entity);
 			ApiFutures.addCallback(response, updateCallbackHandler, Runnable::run);
 			return updateCallbackHandler.isUpdated().blockingGet();
@@ -269,7 +304,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	public Boolean delete(final String id, final String collectionName) {
 		try (Firestore db = firestoreBuilder.build().getService()) {
-			var deleteCallbackHandler = new DeleteCallbackHandler();
+			DeleteCallbackHandler deleteCallbackHandler = new DeleteCallbackHandler();
 			ApiFuture<WriteResult> response = db.collection(collectionName).document(id).delete();
 			ApiFutures.addCallback(response, deleteCallbackHandler, Runnable::run);
 
@@ -280,87 +315,61 @@ public class FirestoreTemplate extends AbstractVerticle {
 		}
 	}
 
-	private void handlerInsert(Message<Object> message) {
-		var _collectionName = message.headers().get("_collectionName");
-		var entity = Json.decodeValue((String) message.body(), HashMap.class);
-		var id = insert(entity, _collectionName);
 
-		message.rxReply(id).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+	private void handlerInsert(Message<Object> message) {
+		String _collectionName = message.headers().get("_collectionName");
+		HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
+		String id =  insert(entity, _collectionName);
+		message.reply(id);
 	}
 
 	private void handlerEmpty(Message<Object> message) {
-		var _collectionName = message.headers().get("_collectionName");
-		var id = empty(_collectionName);
-
-		message.rxReply(id).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+		String _collectionName = message.headers().get("_collectionName");
+		String id = empty(_collectionName);
+		message.reply(id);
 	}
 
 	private void handlerUpsert(Message<Object> message) {
-		var _collectionName = message.headers().get("_collectionName");
-		var _id = message.headers().get("_id");
-		var entity = Json.decodeValue((String) message.body(), HashMap.class);
-		var id = upsert(entity, _id, _collectionName);
-
-		message.rxReply(id).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+		String _collectionName = message.headers().get("_collectionName");
+		String _id = message.headers().get("_id");
+		HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
+		Boolean id = upsert(entity, _id, _collectionName);
+		message.reply(id);
 	}
 
 	private void handlerGet(Message<Object> message) {
-		var _collectionName = message.headers().get("_collectionName");
-		var _id = message.headers().get("_id");
-		var entity = get(_id, _collectionName);
-
-		message.rxReply(Json.encode(entity)).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+		String _collectionName = message.headers().get("_collectionName");
+		String _id = message.headers().get("_id");
+		Map<String,Object> entity = get(_id, _collectionName);
+		message.reply(Json.encode(entity));
 	}
 
 	private void handlerUpdate(Message<Object> message) {
-		var _collectionName = message.headers().get("_collectionName");
-		var _id = message.headers().get("_id");
-		var entity = Json.decodeValue((String) message.body(), HashMap.class);
-		var updated = update(_id, _collectionName, entity);
-
-		message.rxReply(Json.encode(updated)).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+		String _collectionName = message.headers().get("_collectionName");
+		String _id = message.headers().get("_id");
+		HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
+		Boolean updated = update(_id, _collectionName, entity);
+		message.reply(Json.encode(updated));
 	}
 
 	private void handlerDelete(Message<Object> message) {
-		var _collectionName = message.headers().get("_collectionName");
-		var _id = message.headers().get("_id");
-		var deleted = delete(_id, _collectionName);
-
-		message.rxReply(Json.encode(deleted)).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+		String _collectionName = message.headers().get("_collectionName");
+		String _id = message.headers().get("_id");
+		Boolean deleted = delete(_id, _collectionName);
+		message.reply(Json.encode(deleted));
 	}
 
 	private void handlerQueryBuilder(Message<byte[]> message) {
-		var _collectionName = message.headers().get("_collectionName");
-		var query = queryBuilder(_collectionName);
-
-		message.rxReply(SerializationUtils.serialize(query)).subscribe();
+		String _collectionName = message.headers().get("_collectionName");
+		Query query = queryBuilder(_collectionName);
+		message.reply(SerializationUtils.serialize(query));
 	}
 
 	private void handlerQuery(Message<byte[]> message) {
-		var query = (Query) SerializationUtils.deserialize(message.body());
-		var entityList = get(query);
-
-		message.rxReply(Json.encode(entityList)).subscribe();
+		Query query = (Query) SerializationUtils.deserialize(message.body());
+		List<Map<String, Object>> entityList = get(query);
+		message.reply(Json.encode(entityList));
 	}
-
 	/**
 	 * To delete a document with some given preconditions.
 	 *

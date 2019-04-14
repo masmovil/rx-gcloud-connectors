@@ -1,5 +1,5 @@
 package com.masmovil.rxfirestore;
-
+/*
 import org.junit.jupiter.api.Test;
 
 import io.reactivex.Observable;
@@ -26,3 +26,4 @@ public class RxFirestoreDeleteIT {
 		testObserver.assertNever(r -> r == false);
 	}
 }
+*/

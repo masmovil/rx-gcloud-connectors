@@ -37,6 +37,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-sync</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.8.1</version>
@@ -102,6 +108,18 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>co.paralleluniverse</groupId>
+            <artifactId>quasar-core</artifactId>
+            <version>0.8.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vlkan</groupId>
+            <artifactId>quasar-maven-plugin</artifactId>
+            <version>0.7.9</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -118,6 +136,38 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <mainClass>org.idle.easy.fibers.Launcher</mainClass>
+                    <workingDirectory>target/classes</workingDirectory>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-javaagent:/Users/pjgg/.m2/repository/co/paralleluniverse/quasar-core/0.7.10/quasar-core-0.7.10-jdk8.jar</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>com.vlkan</groupId>
+                <artifactId>quasar-maven-plugin</artifactId>
+                <version>0.7.9</version>
+                <configuration>
+                    <check>true</check>
+                    <debug>true</debug>
+                    <verbose>true</verbose>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>instrument</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
@@ -132,6 +182,36 @@
             </properties>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.6.0</version>
+                        <configuration>
+                            <mainClass>org.idle.easy.fibers.Launcher</mainClass>
+                            <workingDirectory>target/classes</workingDirectory>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-javaagent:${co.paralleluniverse:quasar-core:jar}</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.vlkan</groupId>
+                        <artifactId>quasar-maven-plugin</artifactId>
+                        <version>0.7.9</version>
+                        <configuration>
+                            <check>true</check>
+                            <debug>true</debug>
+                            <verbose>true</verbose>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>instrument</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <!-- Add Acceptance Test -->
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>

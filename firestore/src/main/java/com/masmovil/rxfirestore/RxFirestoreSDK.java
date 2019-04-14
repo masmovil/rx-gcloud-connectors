@@ -20,9 +20,12 @@ import org.apache.commons.lang3.SerializationUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.reactivex.Single;
+import io.reactivex.subjects.SingleSubject;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.Json;
-import io.vertx.reactivex.core.eventbus.Message;
+import io.vertx.ext.sync.Sync;
 
 /**
  * RxFirestoreSDK is a data access object implementation for Google Firestore database.
@@ -53,15 +56,25 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single document key ID.
 	 */
 	public Single<String> insert(final E entity){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		SingleSubject<String> idResult = SingleSubject.create();
+		SingleSubject<EventBus> eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", entity.getCollectionName());
 
-		return eventBus.<String>rxSend(TOPIC_INSERT, Json.encode(entity.toMap()), deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
-				.map(Message::body)
-				.map(message -> message);
+		eventBus.subscribe(eb -> {
+			/*Message<String> id = Sync.awaitResult(h -> eb.<String>send(TOPIC_INSERT, Json.encode(entity.toMap()), deliveryOpt));
+			idResult.onSuccess(id.body());*/
+		 	eb.<String>send(TOPIC_INSERT, Json.encode(entity.toMap()), deliveryOpt, Sync.fiberHandler(response -> {
+				 idResult.onSuccess(response.result().body());
+			 }));
+
+			/*eb.<String>send(TOPIC_INSERT, Json.encode(entity.toMap()), deliveryOpt, response -> {
+				idResult.onSuccess(response.result().body());
+			});*/
+		 });
+
+		 return idResult;
 	}
 
 	/**
@@ -72,7 +85,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @param collectionName against which you want to make the query.
 	 * @return Single document key ID.
 	 */
-	public Single<String> empty(final String collectionName){
+	/*public Single<String> empty(final String collectionName){
 		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		var deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -82,7 +95,7 @@ public class RxFirestoreSDK<E extends Entity> {
 				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> message);
-	}
+	}*/
 
 	/**
 	 * queryBuilder allow you to develop your own query with where statement. Use in combination with get in order to
@@ -95,7 +108,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * <p>
 	 * var query = carsRepository.queryBuilder(CarModel.CARS_COLLECTION_NAME).whereEqualTo("brand","Toyota");
 	 */
-	public Single<Query> queryBuilder(final String collectionName){
+	/*public Single<Query> queryBuilder(final String collectionName){
 		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		var deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -105,7 +118,7 @@ public class RxFirestoreSDK<E extends Entity> {
 				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> SerializationUtils.deserialize(message));
-	}
+	}*/
 
 	/**
 	 * get will retrieve a List of Documents by a given query.
@@ -113,7 +126,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @param query .Build your query with queryBuilder method.
 	 * @return a single list of documents that match query criteria.
 	 */
-	public Single<List<E>> get(Query query){
+	/*public Single<List<E>> get(Query query){
 		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		var deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -127,7 +140,7 @@ public class RxFirestoreSDK<E extends Entity> {
 					data.stream().forEach(elem -> result.add((E)supplier.get().fromJsonAsMap(elem)));
 					return result;
 				});
-	}
+	}*/
 
 	/**
 	 * If the document does not exist, it will be created. If the document does exist, its contents will be overwritten
@@ -142,7 +155,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @param collectionName against which you want to upsert.
 	 * @return Single boolean.
 	 */
-	public Single<Boolean> upsert(final String id, final String collectionName, final E entity){
+	/*public Single<Boolean> upsert(final String id, final String collectionName, final E entity){
 		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		var deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -153,7 +166,7 @@ public class RxFirestoreSDK<E extends Entity> {
 				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> message);
-	}
+	}*/
 
 	/**
 	 * get will retrieve a Document by ID for a given collection name.
@@ -162,7 +175,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @param id             , document ID that you would like to retrieve
 	 * @return Single document
 	 */
-	public Single<E> get(final String id, final String collectionName){
+	/*public Single<E> get(final String id, final String collectionName){
 		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		var deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -176,7 +189,7 @@ public class RxFirestoreSDK<E extends Entity> {
 					var data = Json.decodeValue(message,HashMap.class);
 					return (E)supplier.get().fromJsonAsMap(data);
 				});
-	}
+	}*/
 
 	/**
 	 * Update full document (overwrite).
@@ -186,7 +199,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @param collectionName against which you want to make the query.
 	 * @return Single boolean. True means updated.
 	 */
-	public Single<Boolean> update(final String id, final String collectionName, final E entity){
+	/*public Single<Boolean> update(final String id, final String collectionName, final E entity){
 		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		var deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -197,7 +210,7 @@ public class RxFirestoreSDK<E extends Entity> {
 				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> Boolean.valueOf(message));
-	}
+	}*/
 
 
 	/**
@@ -207,7 +220,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @param collectionName
 	 * @return Single boolean
 	 */
-	public Single<Boolean> delete(final String id, final String collectionName){
+	/*public Single<Boolean> delete(final String id, final String collectionName){
 		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		var deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -218,6 +231,6 @@ public class RxFirestoreSDK<E extends Entity> {
 				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> Boolean.valueOf(message));
-	}
+	}*/
 
 }

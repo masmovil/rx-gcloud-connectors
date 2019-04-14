@@ -2,7 +2,7 @@ package com.masmovil.rxfirestore;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxOptions;
-import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.ext.sync.SyncVerticle;
 import io.vertx.reactivex.core.Vertx;
 
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class Runner {
 
-	public static Vertx run(List<Class<? extends AbstractVerticle>> classes, VertxOptions options, List<DeploymentOptions> deploymentOptions) {
+	public static Vertx run(List<Class<? extends SyncVerticle>> classes, VertxOptions options, List<DeploymentOptions> deploymentOptions) {
 		List<String> verticleNames = classes.stream().map(Class::getName).collect(Collectors.toList());
 		Consumer<Vertx> runner = vertx -> {
 						try {
