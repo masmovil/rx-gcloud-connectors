@@ -21,7 +21,7 @@ While the Cloud Firestore interface has many of the same features as traditional
   - [Get](#get)
   - [Query Builder](#query-builder)
   - [Run Query](#run-query)
-  - [addQueryListener](#add-query-listener)
+  - [Add Query Listener](#add-query-listener)
   - [Update](#update)
   - [Delete](#delete)
 
