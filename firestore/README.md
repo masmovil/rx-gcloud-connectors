@@ -91,7 +91,7 @@ public class VehicleRepository extends RxFirestoreSDK<Vehicle> {
 ```
 
 3. Add `GCLOUD_KEY_PATH` environment variable to your project, pointing to your keyfile.json
-
+4. *(Optional)* Add `DB_THREAD_POOL_SIZE` environment variable to your project. Default value is set to the amount of cores * 2.
 
 ## API methods
 
