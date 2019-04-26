@@ -1,5 +1,6 @@
 package com.masmovil.rxfirestore;
 
+import io.reactivex.subjects.SingleSubject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -20,8 +21,9 @@ public enum FirestoreTemplateFactory {
 	private final static long MAX_EXECUTION_TIME_SEC = 30;
 
 	private EventBus eventBus;
+	private SingleSubject<Vertx> vertxSubject = SingleSubject.create();
 
-	public void init(Vertx ...vertx){
+	public void init(Vertx ...vertxArg){
 
 		EventBusOptions eventBusOpt = new EventBusOptions();
 
@@ -40,7 +42,7 @@ public enum FirestoreTemplateFactory {
 				.setMaxWorkerExecuteTime(MAX_EXECUTION_TIME_SEC)
 				.setMaxWorkerExecuteTimeUnit(TimeUnit.SECONDS);
 
-		if(vertx.length == 0){
+		if(vertxArg.length == 0){
 			// Hack in order to avoid a noisy blocked thread exception at initialization time. Only happens once.
 			DefaultChannelId.newInstance();
 
@@ -48,11 +50,12 @@ public enum FirestoreTemplateFactory {
 			List<DeploymentOptions> deploymentOptionsList = Arrays.asList(firestoreWorkerDeploymentOptions);
 
 			var vertxInstance = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
-
 			eventBus = vertxInstance.eventBus();
+			vertxSubject.onSuccess(vertxInstance);
 		}else{
-			vertx[0].deployVerticle(FirestoreTemplate.class.getName(), firestoreWorkerDeploymentOptions);
-			eventBus = vertx[0].eventBus();
+			vertxArg[0].deployVerticle(FirestoreTemplate.class.getName(), firestoreWorkerDeploymentOptions);
+			eventBus = vertxArg[0].eventBus();
+			vertxSubject.onSuccess(vertxArg[0]);
 		}
 	}
 
@@ -60,4 +63,7 @@ public enum FirestoreTemplateFactory {
 		return eventBus;
 	}
 
+	public SingleSubject<Vertx> getVertx() {
+		return vertxSubject;
+	}
 }

@@ -3,6 +3,7 @@ package com.masmovil.rxfirestore.examples;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import com.masmovil.rxfirestore.Vehicle;
@@ -10,6 +11,7 @@ import com.masmovil.rxfirestore.VehicleRepository;
 
 public class InsertExample {
 
+	@Ignore
 	@Test
 	public void should_insert_100_vehicles() throws InterruptedException {
 		final int iterations = 100;
@@ -34,7 +36,7 @@ public class InsertExample {
 		latch.await();
 	}
 
-
+	@Ignore
 	@Test
 	public void should_insert_500_vehicles() throws InterruptedException {
 		final int iterations = 500;
@@ -59,6 +61,7 @@ public class InsertExample {
 		latch.await();
 	}
 
+	@Ignore
 	@Test
 	public void should_insert_1000_vehicles() throws InterruptedException {
 		final int iterations = 1000;

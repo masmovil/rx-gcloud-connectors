@@ -2,6 +2,7 @@ package com.masmovil.rxfirestore;
 
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import io.reactivex.Observable;
@@ -12,7 +13,7 @@ public class RxfirestoreGetIT {
 
 	//TODO: You need to set your Gcloud creadentials as enviroment variable, example: GCLOUD_KEY_PATH=/Users/pablo/Desktop/keyfile.json
 	private VehicleRepository vehicleRepository = new VehicleRepository();
-
+	@Ignore
 	@Test
 	public void should_get_car(){
 
@@ -29,7 +30,7 @@ public class RxfirestoreGetIT {
 		testObserver.assertValue(v -> v.getBrand().equalsIgnoreCase("Toyota"));
 
 	}
-
+	@Ignore
 	@Test
 	public void should_get_where(){
 		TestObserver<List<Vehicle>> testObserver = new TestObserver();
@@ -47,37 +48,4 @@ public class RxfirestoreGetIT {
 
 	}
 
-	/*
-
-	@Ignore
-	@Test
-	public void should_subscribe_to_query() throws InterruptedException {
-
-		var query = vehicleRepository.queryBuilder(Vehicle.CARS_COLLECTION_NAME).whereEqualTo("brand","Toyota");
-		var listener = vehicleRepository.addQueryListener(query, Optional.empty());
-
-		listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));
-
-		var vehicle = new Vehicle("Toyota", "Auris", true);
-		var ID = vehicleRepository.insert(vehicle).blockingGet();
-
-		Thread.sleep(10);
-
-		vehicle = new Vehicle("Toyota", "Yaris", true);
-		ID = vehicleRepository.insert(vehicle).blockingGet();
-
-		Thread.sleep(10);
-
-		vehicle = new Vehicle("Toyota", "Hilux", true);
-		ID = vehicleRepository.insert(vehicle).blockingGet();
-
-		Thread.sleep(5000);
-
-		vehicle = new Vehicle("Toyota", "BRUTALLLL", true);
-		ID = vehicleRepository.insert(vehicle).blockingGet();
-
-		Thread.sleep(1000);
-		listener.getRegistration().remove();
-	}
-	 */
 }
