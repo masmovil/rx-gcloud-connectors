@@ -21,6 +21,7 @@ While the Cloud Firestore interface has many of the same features as traditional
   - [Get](#get)
   - [Query Builder](#query-builder)
   - [Run Query](#run-query)
+  - [addQueryListener](#add-query-listener)
   - [Update](#update)
   - [Delete](#delete)
 
@@ -158,7 +159,7 @@ get will retrieve a List of Documents by a given query.
 Single<List<E>> get(Query query)
 ```
 
-### Run Query Listener
+### Add Query Listener
 
 addQueryListener, You can listen to a document changes (create, update and delete).
 ```
