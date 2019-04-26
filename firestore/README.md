@@ -26,8 +26,8 @@ While the Cloud Firestore interface has many of the same features as traditional
 
 ## Motivation
 
-Java Firestore SDK provided by Google it's implemented in a traditional way, through OS kernel threads. This is a very expensive way to give us a concurrency abstraction.
-This implementation, fails to meet today’s requirement of concurrency, in particular threads cannot match the scale of the domain’s unit of concurrency. For example,
+Java Firestore SDK provided by Google is implemented in a traditional way, through OS kernel threads. This is a very expensive way to give us a concurrency abstraction.
+This implementation, fails to meet today's requirement of concurrency, in particular threads cannot match the scale of the domain’s unit of concurrency. For example,
 applications usually allow up to millions of transactions, users or sessions. However, the number of threads supported by the kernel is much less. Thus, a Thread for every user,
 transaction, or session is often not feasible. To sum up, OS kernel threads is insufficient for meeting modern demands, and wasteful in computing resources that are particularly valuable in the cloud.
 
