@@ -143,35 +143,6 @@ public class FirestoreTemplate extends AbstractVerticle {
 	public Query queryBuilder(final String collectionName) {
 			return new Query(collectionName);
 	}
-/*
-	/**
-	 * addQueryListener, You can listen to a document changes (create, update and delete).
-	 *
-	 * @param query         to subscribe. Build your query with queryBuilder method.
-	 * @param eventsHandler will handler document changes. By default we provide an eventHandler that will give you a Flowable with all the document changes.
-	 * @return EventListenerResponse, contains two object.
-	 * "registration" will allow you to close the event flow
-	 * <p>
-	 * example:
-	 * <p>
-	 * listener.getRegistration().remove();
-	 * <p>
-	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query,
-	 * and then all the changes until you close your listener.
-	 * <p>
-	 * example:
-	 * <p>
-	 * listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));
-	 */
-/*
-	public EventListenerResponse<R> addQueryListener(final Query query,
-			final Optional<EventListener<QuerySnapshot>> eventsHandler) {
-		var defaultHandler = new DefaultEventListener<R>(supplier.get());
-		var listener = query.addSnapshotListener(rxJavaExecutor, eventsHandler.orElse(defaultHandler));
-		return new EventListenerResponse<R>(defaultHandler.getSource(), listener);
-	}
-*/
-
 
 	public List<Map<String, Object>> get(final Query query) {
 		try (Firestore db = firestoreBuilder.build().getService()) {

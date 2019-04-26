@@ -9,11 +9,15 @@ import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_QUERY_BUILDER;
 import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_UPDATE;
 import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_UPSERT;
 
+import io.reactivex.subjects.SingleSubject;
+import io.vertx.core.Future;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.SerializationUtils;
@@ -22,7 +26,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.cloud.firestore.EventListener;
 import com.google.cloud.firestore.QuerySnapshot;
 
-import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.Json;
@@ -55,7 +58,9 @@ public class RxFirestoreSDK<E extends Entity> {
 	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor, Vertx vertx){
 		supplier = Objects.requireNonNull(entityConstructor);
 		FirestoreTemplateFactory.INSTANCE.init(vertx);
-		blockingFirestoreTemplate = new BlockingFirestoreTemplate(supplier, vertx);
+		SingleSubject<Vertx> vertxSubject = SingleSubject.create();
+		vertxSubject.onSuccess(vertx);
+		blockingFirestoreTemplate = new BlockingFirestoreTemplate(supplier, vertxSubject);
 	}
 
 	/**
@@ -254,8 +259,10 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));
 	 */
 
-	public EventListenerResponse<E> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler) {
+	public EventListenerResponse<E> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler)
+			throws InterruptedException, ExecutionException, TimeoutException {
 		return blockingFirestoreTemplate.addQueryListener(query, eventsHandler);
 	}
 
 }
+

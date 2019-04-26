@@ -1,5 +1,6 @@
 package com.masmovil.rxfirestore;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import io.reactivex.Observable;
@@ -11,8 +12,9 @@ public class RxFirestoreUpdateIT {
 	//TODO: You need to set your Gcloud creadentials as enviroment variable, example: GCLOUD_KEY_PATH=/Users/pablo/Desktop/keyfile.json
 	private VehicleRepository vehicleRepository = new VehicleRepository();
 
+	@Ignore
 	@Test
-	public void should_update_car(){
+	public void should_update_car() {
 
 		TestObserver<Boolean> testObserver = new TestObserver();
 		String expectedModel = "Auris_updated";
@@ -29,6 +31,7 @@ public class RxFirestoreUpdateIT {
 		testObserver.assertNoErrors();
 		testObserver.assertNever(r -> r == false);
 	}
+
 
 /*
 	@Ignore

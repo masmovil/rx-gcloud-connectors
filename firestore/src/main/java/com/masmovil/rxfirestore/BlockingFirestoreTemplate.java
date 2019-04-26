@@ -1,7 +1,10 @@
 package com.masmovil.rxfirestore;
 
 import static com.masmovil.rxfirestore.FirestoreTemplate.SCOPES;
+import static io.vertx.core.Future.future;
 
+import io.reactivex.subjects.SingleSubject;
+import io.vertx.core.Future;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,6 +12,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 import com.google.auth.oauth2.GoogleCredentials;
@@ -23,11 +30,11 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 
 	private final Supplier<? extends Entity> supplier;
 	private final FirestoreOptions.Builder firestoreBuilder;
-	private final Vertx vertx;
+	private final SingleSubject<Vertx> vertx;
 
-	public BlockingFirestoreTemplate(Supplier<? extends Entity> entityConstructor, Vertx vertx){
+	public BlockingFirestoreTemplate(Supplier<? extends Entity> entityConstructor, SingleSubject<Vertx> vertxSubject){
 		supplier = Objects.requireNonNull(entityConstructor);
-		this.vertx = vertx;
+		this.vertx = vertxSubject;
 
 		try {
 
@@ -62,65 +69,53 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 	 * listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));
 	 */
 
-	public EventListenerResponse<E> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler) {
-		var wrapper = new Object(){ EventListenerResponse<E> eventListener;};
-		vertx.executeBlocking(future ->{
-			try (Firestore db = firestoreBuilder.build().getService()) {
-				var defaultHandler = new DefaultEventListener<E>(supplier.get());
+	public EventListenerResponse<E> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler)
+			throws InterruptedException, ExecutionException, TimeoutException {
+		Future<EventListenerResponse<E>> res = future();
+		CompletableFuture<EventListenerResponse<E>> fut = new CompletableFuture<>();
+		vertx.subscribe(vertx -> {
+			vertx.executeBlocking(future -> {
+				Firestore db = firestoreBuilder.build().getService();
+					var defaultHandler = new DefaultEventListener<E>(supplier.get());
+					var q = db.collection(query.getCollectionName());
+					com.google.cloud.firestore.Query queryBuilder;
 
-				var q = db.collection(query.getCollectionName());
-				com.google.cloud.firestore.Query queryBuilder;
+					queryBuilder = q.offset(0);
 
-				if(query.isLimitSet()){
-					queryBuilder = q.limit(query.getLimit());
-				}else{
-					queryBuilder = q.limit(20);
-				}
+					var equalTo = query.getEqualTo();
+					Iterator equalToIt = equalTo.entrySet().iterator();
+					while (equalToIt.hasNext()) {
+						Map.Entry pair = (Map.Entry) equalToIt.next();
+						queryBuilder = queryBuilder.whereEqualTo((String) pair.getKey(), pair.getValue());
+					}
 
-				if(query.isOffsetSet()){
-					queryBuilder.offset(query.getOffset());
-				}
+					var arrayContains = query.getArrayContains();
+					Iterator arrayContainsIt = arrayContains.entrySet().iterator();
+					while (arrayContainsIt.hasNext()) {
+						Map.Entry pair = (Map.Entry) arrayContainsIt.next();
+						queryBuilder = queryBuilder.whereArrayContains((String) pair.getKey(), pair.getValue());
+					}
 
-				var equalTo = query.getEqualTo();
-				Iterator equalToIt = equalTo.entrySet().iterator();
-				while (equalToIt.hasNext()) {
-					Map.Entry pair = (Map.Entry) equalToIt.next();
-					queryBuilder = queryBuilder.whereEqualTo((String)pair.getKey(), pair.getValue());
-				}
+					var greaterThan = query.getGreaterThan();
+					Iterator greaterThanIt = greaterThan.entrySet().iterator();
+					while (greaterThanIt.hasNext()) {
+						Map.Entry pair = (Map.Entry) greaterThanIt.next();
+						queryBuilder = queryBuilder.whereGreaterThan((String) pair.getKey(), pair.getValue());
+					}
 
-				var arrayContains = query.getArrayContains();
-				Iterator arrayContainsIt = arrayContains.entrySet().iterator();
-				while (arrayContainsIt.hasNext()) {
-					Map.Entry pair = (Map.Entry) arrayContainsIt.next();
-					queryBuilder = queryBuilder.whereArrayContains((String)pair.getKey(), pair.getValue());
-				}
+					var lessThan = query.getLessThan();
+					Iterator lessThanIt = lessThan.entrySet().iterator();
+					while (lessThanIt.hasNext()) {
+						Map.Entry pair = (Map.Entry) lessThanIt.next();
+						queryBuilder = queryBuilder.whereLessThan((String) pair.getKey(), pair.getValue());
+					}
 
-				var greaterThan = query.getGreaterThan();
-				Iterator greaterThanIt = greaterThan.entrySet().iterator();
-				while (greaterThanIt.hasNext()) {
-					Map.Entry pair = (Map.Entry) greaterThanIt.next();
-					queryBuilder = queryBuilder.whereGreaterThan((String)pair.getKey(), pair.getValue());
-				}
+					var listener = queryBuilder.addSnapshotListener(eventsHandler.orElse(defaultHandler));
+					future.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
+					fut.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
+			}, res);
+				});
 
-				var lessThan = query.getLessThan();
-				Iterator lessThanIt = lessThan.entrySet().iterator();
-				while (lessThanIt.hasNext()) {
-					Map.Entry pair = (Map.Entry) lessThanIt.next();
-					queryBuilder = queryBuilder.whereLessThan((String)pair.getKey(), pair.getValue());
-				}
-
-				var listener = queryBuilder.addSnapshotListener(eventsHandler.orElse(defaultHandler));
-				future.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
-
-			} catch (Exception e) {
-				e.printStackTrace();
-				throw new RuntimeException(e.getMessage());
-			}
-		}, resonse ->{
-			wrapper.eventListener = (EventListenerResponse<E>)resonse.result();
-		});
-
-		return wrapper.eventListener;
+		return fut.get(10, TimeUnit.SECONDS);
 	}
-
 }

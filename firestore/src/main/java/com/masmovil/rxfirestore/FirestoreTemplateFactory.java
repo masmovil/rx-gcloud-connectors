@@ -1,5 +1,6 @@
 package com.masmovil.rxfirestore;
 
+import io.reactivex.subjects.SingleSubject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +21,7 @@ public enum FirestoreTemplateFactory {
 	private final static long MAX_EXECUTION_TIME_SEC = 30;
 
 	private EventBus eventBus;
-	private Vertx vertx;
+	private SingleSubject<Vertx> vertxSubject = SingleSubject.create();
 
 	public void init(Vertx ...vertxArg){
 
@@ -50,11 +51,11 @@ public enum FirestoreTemplateFactory {
 
 			var vertxInstance = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
 			eventBus = vertxInstance.eventBus();
-			vertx = vertxInstance;
+			vertxSubject.onSuccess(vertxInstance);
 		}else{
 			vertxArg[0].deployVerticle(FirestoreTemplate.class.getName(), firestoreWorkerDeploymentOptions);
 			eventBus = vertxArg[0].eventBus();
-			vertx = vertxArg[0];
+			vertxSubject.onSuccess(vertxArg[0]);
 		}
 	}
 
@@ -62,7 +63,7 @@ public enum FirestoreTemplateFactory {
 		return eventBus;
 	}
 
-	public Vertx getVertx() {
-		return vertx;
+	public SingleSubject<Vertx> getVertx() {
+		return vertxSubject;
 	}
 }
