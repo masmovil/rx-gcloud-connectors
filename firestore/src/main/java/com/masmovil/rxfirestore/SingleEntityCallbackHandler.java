@@ -20,7 +20,7 @@ public class SingleEntityCallbackHandler implements ApiFutureCallback<DocumentSn
 	@Override
 	public void onSuccess(DocumentSnapshot document) {
 		if (document.exists()) {
-			var data = document.getData();
+			Map<String, Object> data = document.getData();
 			data.put("_id", Optional.ofNullable(document.getId()).orElse("NONE"));
 			entity.onSuccess(data);
 		}else{

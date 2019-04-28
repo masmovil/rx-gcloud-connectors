@@ -10,7 +10,7 @@ import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_UPDATE;
 import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_UPSERT;
 
 import io.reactivex.subjects.SingleSubject;
-import io.vertx.core.Future;
+import io.vertx.reactivex.core.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,8 +72,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single document key ID.
 	 */
 	public Single<String> insert(final E entity){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", entity.getCollectionName());
 
@@ -92,8 +92,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single document key ID.
 	 */
 	public Single<String> empty(final String collectionName){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 
@@ -115,8 +115,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * var query = carsRepository.queryBuilder(CarModel.CARS_COLLECTION_NAME).whereEqualTo("brand","Toyota");
 	 */
 	public Single<Query> queryBuilder(final String collectionName){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 
@@ -133,8 +133,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return a single list of documents that match query criteria.
 	 */
 	public Single<List<E>> get(Query query){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 
 		return eventBus.<String>rxSend(TOPIC_QUERY, SerializationUtils.serialize(query), deliveryOpt)
@@ -142,7 +142,7 @@ public class RxFirestoreSDK<E extends Entity> {
 				.map(Message::body)
 				.map(message -> {
 					List<E> result = new ArrayList<>();
-					var data = Json.decodeValue(message,new TypeReference<List<HashMap>>(){});
+					List<HashMap> data = Json.decodeValue(message,new TypeReference<List<HashMap>>(){});
 					data.stream().forEach(elem -> result.add((E)supplier.get().fromJsonAsMap(elem)));
 					return result;
 				});
@@ -162,8 +162,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single boolean.
 	 */
 	public Single<Boolean> upsert(final String id, final String collectionName, final E entity){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 		deliveryOpt.addHeader("_id", id);
@@ -182,8 +182,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single document
 	 */
 	public Single<E> get(final String id, final String collectionName){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 		deliveryOpt.addHeader("_id", id);
@@ -192,7 +192,7 @@ public class RxFirestoreSDK<E extends Entity> {
 				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> {
-					var data = Json.decodeValue(message,HashMap.class);
+					HashMap data = Json.decodeValue(message,HashMap.class);
 					return (E)supplier.get().fromJsonAsMap(data);
 				});
 	}
@@ -206,8 +206,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single boolean. True means updated.
 	 */
 	public Single<Boolean> update(final String id, final String collectionName, final E entity){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 		deliveryOpt.addHeader("_id", id);
@@ -227,8 +227,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single boolean
 	 */
 	public Single<Boolean> delete(final String id, final String collectionName){
-		var eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		var deliveryOpt = new DeliveryOptions();
+		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 		deliveryOpt.addHeader("_id", id);

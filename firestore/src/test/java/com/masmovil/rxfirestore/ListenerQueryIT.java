@@ -14,12 +14,12 @@ public class ListenerQueryIT {
 	@Test
 	public void should_subscribe_to_query() throws InterruptedException, TimeoutException, ExecutionException {
 
-		var query = vehicleRepository.queryBuilder(Vehicle.CARS_COLLECTION_NAME).blockingGet().whereEqualTo("brand","Toyota");
-		var listener = vehicleRepository.addQueryListener(query, Optional.empty());
+		Query query = vehicleRepository.queryBuilder(Vehicle.CARS_COLLECTION_NAME).blockingGet().whereEqualTo("brand","Toyota");
+		EventListenerResponse<Vehicle> listener = vehicleRepository.addQueryListener(query, Optional.empty());
 		listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()), error -> {error.printStackTrace();});
 
-		var vehicle = new Vehicle("Toyota", "Auris", true);
-		var ID = vehicleRepository.insert(vehicle).blockingGet();
+		Vehicle vehicle = new Vehicle("Toyota", "Auris", true);
+		String ID = vehicleRepository.insert(vehicle).blockingGet();
 
 		Thread.sleep(10);
 

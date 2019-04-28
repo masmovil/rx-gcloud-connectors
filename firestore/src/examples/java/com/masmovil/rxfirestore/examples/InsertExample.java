@@ -17,14 +17,14 @@ public class InsertExample {
 		final int iterations = 100;
 		VehicleRepository vehicleRepository = new VehicleRepository();
 		final CountDownLatch latch = new CountDownLatch(iterations);
-		var vehicle = new Vehicle("Toyota", "Auris", true);
-		var initTime = System.currentTimeMillis();
+		Vehicle vehicle = new Vehicle("Toyota", "Auris", true);
+		Long initTime = System.currentTimeMillis();
 
 		for (int i = 0; i < iterations; i++) {
 			vehicleRepository.insert(vehicle).subscribe(id ->{
 				latch.countDown();
 				if(latch.getCount() == 0){
-					var amountTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - initTime);
+					Long amountTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - initTime);
 					System.out.println("Result");
 					System.out.println("========");
 					System.out.println("Total time: " + (amountTime) + " sec");
@@ -42,14 +42,14 @@ public class InsertExample {
 		final int iterations = 500;
 		VehicleRepository vehicleRepository = new VehicleRepository();
 		final CountDownLatch latch = new CountDownLatch(iterations);
-		var vehicle = new Vehicle("Toyota", "Auris", true);
-		var initTime = System.currentTimeMillis();
+		Vehicle vehicle = new Vehicle("Toyota", "Auris", true);
+		Long initTime = System.currentTimeMillis();
 
 		for (int i = 0; i < iterations; i++) {
 			vehicleRepository.insert(vehicle).subscribe(id ->{
 				latch.countDown();
 				if(latch.getCount() == 0){
-					var amountTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - initTime);
+					Long amountTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - initTime);
 					System.out.println("Result");
 					System.out.println("========");
 					System.out.println("Total time: " + (amountTime) + " sec");
@@ -67,14 +67,14 @@ public class InsertExample {
 		final int iterations = 1000;
 		VehicleRepository vehicleRepository = new VehicleRepository();
 		final CountDownLatch latch = new CountDownLatch(iterations);
-		var vehicle = new Vehicle("Toyota", "Auris", true);
-		var initTime = System.currentTimeMillis();
+		Vehicle vehicle = new Vehicle("Toyota", "Auris", true);
+		Long initTime = System.currentTimeMillis();
 
 		for (int i = 0; i < iterations; i++) {
 			vehicleRepository.insert(vehicle).subscribe(id ->{
 				latch.countDown();
 				if(latch.getCount() == 0){
-					var amountTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - initTime);
+					Long amountTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - initTime);
 					System.out.println("Result");
 					System.out.println("========");
 					System.out.println("Total time: " + (amountTime) + " sec");

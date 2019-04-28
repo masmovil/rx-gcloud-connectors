@@ -18,7 +18,7 @@ public class RxFirestoreUpdateIT {
 
 		TestObserver<Boolean> testObserver = new TestObserver();
 		String expectedModel = "Auris_updated";
-		var vehicle = new Vehicle("Toyota", "Auris", true);
+		Vehicle vehicle = new Vehicle("Toyota", "Auris", true);
 		Single<Boolean> isUpdated = vehicleRepository.insert(vehicle).flatMap(id -> {
 			vehicle.setModel(expectedModel);
 			return vehicleRepository.update(id, vehicle.getCollectionName(), vehicle);

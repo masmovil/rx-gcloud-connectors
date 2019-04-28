@@ -16,7 +16,7 @@ public class RxFirestoreDeleteIT {
 	public void should_delete_car() {
 
 		TestObserver<Boolean> testObserver = new TestObserver();
-		var vehicle = new Vehicle("Toyota", "Auris", true);
+		Vehicle vehicle = new Vehicle("Toyota", "Auris", true);
 		Single<Boolean> isDeleted  = vehicleRepository.insert(vehicle).flatMap(id -> vehicleRepository.delete(id, Vehicle.CARS_COLLECTION_NAME));
 		Observable<Boolean> result = Observable.fromFuture(isDeleted.toFuture());
 
