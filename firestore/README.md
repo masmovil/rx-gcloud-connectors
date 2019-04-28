@@ -10,7 +10,7 @@ While the Cloud Firestore interface has many of the same features as traditional
 ## Index
 
 - [Motivation](#motivation)
-  - [Design approach Version 1.0.3](#design-approach)
+  - [Design approach Version 1.0.4](#design-approach)
 - [Minimum Requirements](#minimum-requirements)
 - [Maven useful commands](#maven-useful-commands)
 - [How to use it](#How-to-use-it)
@@ -45,7 +45,7 @@ This event bus will be consumed by a Vertx Actor (Worker Verticle), executing al
 
 ## Minimum Requirements
 
--   Java 11
+-   Java 1.8+
 -   Maven 3.5.3
 
 ## Maven useful commands
@@ -61,7 +61,7 @@ This event bus will be consumed by a Vertx Actor (Worker Verticle), executing al
  <dependency>
     <groupId>com.masmovil.gcloud</groupId>
     <artifactId>firestore</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.4-SNAPSHOT</version>
  </dependency>
 ```
 

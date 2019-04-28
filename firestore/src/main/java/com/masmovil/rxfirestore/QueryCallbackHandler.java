@@ -27,7 +27,7 @@ public class QueryCallbackHandler implements ApiFutureCallback<QuerySnapshot> {
 		List<Map<String, Object>> result = new ArrayList<>();
 		List<QueryDocumentSnapshot> documents =  futureDocuments.getDocuments();
 		for (DocumentSnapshot document : documents) {
-			var data = document.getData();
+			Map<String,Object> data = document.getData();
 			data.put("_id", Optional.ofNullable(document.getId()).orElse("NONE"));
 			result.add(data);
 		}

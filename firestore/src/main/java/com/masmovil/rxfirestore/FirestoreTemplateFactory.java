@@ -28,8 +28,8 @@ public enum FirestoreTemplateFactory {
 		EventBusOptions eventBusOpt = new EventBusOptions();
 
 		// Deployment options to set the verticle as a worker
-		var poolsize = Optional.ofNullable(System.getenv("DB_THREAD_POOL_SIZE")).orElse("");
-		var dbThreadPoolSize = poolsize.isEmpty()?Runtime.getRuntime().availableProcessors() * 2 :Integer.parseInt(poolsize);
+		String poolsize = Optional.ofNullable(System.getenv("DB_THREAD_POOL_SIZE")).orElse("");
+		int dbThreadPoolSize = poolsize.isEmpty()?Runtime.getRuntime().availableProcessors() * 2 :Integer.parseInt(poolsize);
 
 		if(poolsize.isEmpty()) {
 			System.out.println("No DB_THREAD_POOL_SIZE environment variable has set. Default value " + dbThreadPoolSize);
@@ -49,7 +49,7 @@ public enum FirestoreTemplateFactory {
 			List<Class<? extends AbstractVerticle>> verticleList = Arrays.asList(FirestoreTemplate.class);
 			List<DeploymentOptions> deploymentOptionsList = Arrays.asList(firestoreWorkerDeploymentOptions);
 
-			var vertxInstance = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
+			Vertx vertxInstance = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
 			eventBus = vertxInstance.eventBus();
 			vertxSubject.onSuccess(vertxInstance);
 		}else{

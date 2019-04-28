@@ -19,7 +19,7 @@ public class RxfirestoreGetIT {
 
 		TestObserver<Vehicle> testObserver = new TestObserver();
 		String expectedModel = "Auris";
-		var vehicle = new Vehicle("Toyota", expectedModel, true);
+		Vehicle vehicle = new Vehicle("Toyota", expectedModel, true);
 		Single<Vehicle> retrievedCar = vehicleRepository.insert(vehicle).flatMap(id -> vehicleRepository.get(id, Vehicle.CARS_COLLECTION_NAME));
 		Observable<Vehicle> result = Observable.fromFuture(retrievedCar.toFuture());
 
@@ -35,7 +35,7 @@ public class RxfirestoreGetIT {
 	public void should_get_where(){
 		TestObserver<List<Vehicle>> testObserver = new TestObserver();
 		String expectedModel = "Auris";
-		var vehicle = new Vehicle("Toyota", expectedModel, true);
+		Vehicle vehicle = new Vehicle("Toyota", expectedModel, true);
 		Single<List<Vehicle>> vehicles = vehicleRepository.insert(vehicle).flatMap(id -> vehicleRepository.queryBuilder(Vehicle.CARS_COLLECTION_NAME).flatMap(query -> vehicleRepository.get(query)));
 		Observable<List<Vehicle>> result = Observable.fromFuture(vehicles.toFuture());
 

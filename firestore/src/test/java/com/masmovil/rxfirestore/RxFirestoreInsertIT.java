@@ -19,7 +19,7 @@ public class RxFirestoreInsertIT {
 	public void should_insert_car() throws InterruptedException {
 
 		TestObserver<String> testObserver = new TestObserver();
-		var vehicle = new Vehicle("Toyota", "Auris", true);
+		Vehicle vehicle = new Vehicle("Toyota", "Auris", true);
 		Single<String> ID = vehicleRepository.insert(vehicle);
 		Observable<String> result = Observable.fromFuture(ID.toFuture());
 
