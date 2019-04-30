@@ -46,6 +46,7 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 
 		firestore = FirestoreOptions.newBuilder().setCredentials(
 					GoogleCredentials.fromStream(new FileInputStream(new File(keyPath))).createScoped(SCOPES)).build().getService();
+
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -79,7 +80,6 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 		CompletableFuture<EventListenerResponse<E>> fut = new CompletableFuture<>();
 		vertx.subscribe(vertx -> {
 			vertx.executeBlocking(future -> {
-
 				DefaultEventListener<E> defaultHandler = new DefaultEventListener<E>(supplier.get());
 				CollectionReference q = firestore.collection(query.getCollectionName());
 				com.google.cloud.firestore.Query queryBuilder;
@@ -115,9 +115,12 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 				}
 
 				ListenerRegistration listener = queryBuilder.addSnapshotListener(eventsHandler.orElse(defaultHandler));
-				future.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
+				//future.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
 				fut.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
-			}, res);
+			//	System.out.println("Lalalla");
+			}, result ->{
+				//System.out.println("eco I am here " + result.succeeded());
+			});
 		});
 
 		return fut.get(10, TimeUnit.SECONDS);

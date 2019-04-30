@@ -14,6 +14,7 @@ public class RxFirestoreInsertIT {
 	//TODO: You need to set your Gcloud creadentials as enviroment variable, example: GCLOUD_KEY_PATH=/Users/pablo/Desktop/keyfile.json
 	private VehicleRepository vehicleRepository = new VehicleRepository();
 
+	@Ignore
 	@Test
 	public void should_insert_car() throws InterruptedException {
 
