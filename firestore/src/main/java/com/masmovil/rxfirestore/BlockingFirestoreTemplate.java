@@ -32,7 +32,7 @@ import io.vertx.reactivex.core.Vertx;
 public class BlockingFirestoreTemplate<E extends Entity> {
 
 	private final Supplier<? extends Entity> supplier;
-	private final FirestoreOptions.Builder firestoreBuilder;
+	private final Firestore firestore;
 	private final SingleSubject<Vertx> vertx;
 
 	public BlockingFirestoreTemplate(Supplier<? extends Entity> entityConstructor, SingleSubject<Vertx> vertxSubject) {
@@ -41,12 +41,11 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 
 		try {
 
-			String keyPath = Optional.ofNullable(System.getenv("GCLOUD_KEY_PATH")).orElseThrow(
-					() -> new IllegalArgumentException("GCLOUD_KEY_PATH is not set in the environment"));
+		String keyPath = Optional.ofNullable(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")).orElseThrow(
+				() -> new IllegalArgumentException("GOOGLE_APPLICATION_CREDENTIALS is not set in the environment"));
 
-			firestoreBuilder = FirestoreOptions.newBuilder().setCredentials(
-					GoogleCredentials.fromStream(new FileInputStream(new File(keyPath))).createScoped(SCOPES));
-
+		firestore = FirestoreOptions.newBuilder().setCredentials(
+					GoogleCredentials.fromStream(new FileInputStream(new File(keyPath))).createScoped(SCOPES)).build().getService();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -80,9 +79,9 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 		CompletableFuture<EventListenerResponse<E>> fut = new CompletableFuture<>();
 		vertx.subscribe(vertx -> {
 			vertx.executeBlocking(future -> {
-				Firestore db = firestoreBuilder.build().getService();
+
 				DefaultEventListener<E> defaultHandler = new DefaultEventListener<E>(supplier.get());
-				CollectionReference q = db.collection(query.getCollectionName());
+				CollectionReference q = firestore.collection(query.getCollectionName());
 				com.google.cloud.firestore.Query queryBuilder;
 
 				queryBuilder = q.offset(0);

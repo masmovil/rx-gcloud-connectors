@@ -33,15 +33,16 @@ import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.Message;
 
 /**
- * RxFirestoreSDK is a data access object implementation for Google Firestore database.
- * In order to use it, your repositories must extends this class, where E means the entity type that you want to manage in your collection
+ * RxFirestoreSDK is a data access object implementation for Google Firestore database. In order to use it, your
+ * repositories must extends this class, where E means the entity type that you want to manage in your collection
  * <p>
  * This implementation will give you commons methods in order to work with firestore, but you could overwrite them or
  * implements your own methods in your repository.
  *
- * NOTE: you must set GCLOUD_KEY_PATH environment variable pointing to you keyfile.json.
- * Additionally you could set DB_THREAD_POOL_SIZE environment variable in order to set the amount of thread that you would like to have in order to manage all firestore connections.
- * By default, DB_THREAD_POOL_SIZE will be set to the number of cores that you have X 2.
+ * NOTE: you must set GCLOUD_KEY_PATH environment variable pointing to you keyfile.json. Additionally you could set
+ * DB_THREAD_POOL_SIZE environment variable in order to set the amount of thread that you would like to have in order to
+ * manage all firestore connections. By default, DB_THREAD_POOL_SIZE will be set to the number of cores that you have X
+ * 2.
  */
 public class RxFirestoreSDK<E extends Entity> {
 
@@ -49,13 +50,13 @@ public class RxFirestoreSDK<E extends Entity> {
 	private final Supplier<? extends Entity> supplier;
 	private final BlockingFirestoreTemplate blockingFirestoreTemplate;
 
-	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor){
+	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor) {
 		supplier = Objects.requireNonNull(entityConstructor);
 		FirestoreTemplateFactory.INSTANCE.init();
 		blockingFirestoreTemplate = new BlockingFirestoreTemplate(supplier, FirestoreTemplateFactory.INSTANCE.getVertx());
 	}
 
-	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor, Vertx vertx){
+	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor, Vertx vertx) {
 		supplier = Objects.requireNonNull(entityConstructor);
 		FirestoreTemplateFactory.INSTANCE.init(vertx);
 		SingleSubject<Vertx> vertxSubject = SingleSubject.create();
@@ -65,40 +66,37 @@ public class RxFirestoreSDK<E extends Entity> {
 
 	/**
 	 * Insert create a Document with an auto-generate ID. Firestore auto-generated IDs do not provide any automatic
-	 * ordering. If you want to be able to order your documents by creation date, you should store a timestamp as a
-	 * field in the documents.
+	 * ordering. If you want to be able to order your documents by creation date, you should store a timestamp as a field
+	 * in the documents.
 	 *
-	 * @param entity
 	 * @return Single document key ID.
 	 */
-	public Single<String> insert(final E entity){
+	public Single<String> insert(final E entity) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		deliveryOpt.setLocalOnly(true);
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", entity.getCollectionName());
 
 		return eventBus.<String>rxSend(TOPIC_INSERT, Json.encode(entity.toMap()), deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> message);
 	}
 
 	/**
-	 * Empty create a document for a given collection, and return an an auto-generate ID.
-	 * In some cases, it can be useful to create a document reference with an auto-generated ID,
-	 * then use the reference later through a upsert method.
+	 * Empty create a document for a given collection, and return an an auto-generate ID. In some cases, it can be useful
+	 * to create a document reference with an auto-generated ID, then use the reference later through a upsert method.
 	 *
 	 * @param collectionName against which you want to make the query.
 	 * @return Single document key ID.
 	 */
-	public Single<String> empty(final String collectionName){
+	public Single<String> empty(final String collectionName) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 
 		return eventBus.<String>rxSend(TOPIC_EMPTY, "", deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> message);
 	}
@@ -114,14 +112,13 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * <p>
 	 * var query = carsRepository.queryBuilder(CarModel.CARS_COLLECTION_NAME).whereEqualTo("brand","Toyota");
 	 */
-	public Single<Query> queryBuilder(final String collectionName){
+	public Single<Query> queryBuilder(final String collectionName) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 
 		return eventBus.<byte[]>rxSend(TOPIC_QUERY_BUILDER, "", deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> SerializationUtils.deserialize(message));
 	}
@@ -132,18 +129,18 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @param query .Build your query with queryBuilder method.
 	 * @return a single list of documents that match query criteria.
 	 */
-	public Single<List<E>> get(Query query){
+	public Single<List<E>> get(Query query) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 
 		return eventBus.<String>rxSend(TOPIC_QUERY, SerializationUtils.serialize(query), deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> {
 					List<E> result = new ArrayList<>();
-					List<HashMap> data = Json.decodeValue(message,new TypeReference<List<HashMap>>(){});
-					data.stream().forEach(elem -> result.add((E)supplier.get().fromJsonAsMap(elem)));
+					List<HashMap> data = Json.decodeValue(message, new TypeReference<List<HashMap>>() {
+					});
+					data.stream().forEach(elem -> result.add((E) supplier.get().fromJsonAsMap(elem)));
 					return result;
 				});
 	}
@@ -156,12 +153,10 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * isn't a meaningful ID for the document, and it's more convenient to let Cloud Firestore auto-generate an ID for
 	 * you. You can do this by calling empty.
 	 *
-	 * @param entity
-	 * @param id
 	 * @param collectionName against which you want to upsert.
 	 * @return Single boolean.
 	 */
-	public Single<Boolean> upsert(final String id, final String collectionName, final E entity){
+	public Single<Boolean> upsert(final String id, final String collectionName, final E entity) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -169,7 +164,6 @@ public class RxFirestoreSDK<E extends Entity> {
 		deliveryOpt.addHeader("_id", id);
 
 		return eventBus.<Boolean>rxSend(TOPIC_UPSERT, entity.toMap(), deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> message);
 	}
@@ -178,10 +172,10 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * get will retrieve a Document by ID for a given collection name.
 	 *
 	 * @param collectionName against which you want to make the query.
-	 * @param id             , document ID that you would like to retrieve
+	 * @param id , document ID that you would like to retrieve
 	 * @return Single document
 	 */
-	public Single<E> get(final String id, final String collectionName){
+	public Single<E> get(final String id, final String collectionName) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -189,23 +183,20 @@ public class RxFirestoreSDK<E extends Entity> {
 		deliveryOpt.addHeader("_id", id);
 
 		return eventBus.<String>rxSend(TOPIC_GET, "", deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> {
-					HashMap data = Json.decodeValue(message,HashMap.class);
-					return (E)supplier.get().fromJsonAsMap(data);
+					HashMap data = Json.decodeValue(message, HashMap.class);
+					return (E) supplier.get().fromJsonAsMap(data);
 				});
 	}
 
 	/**
 	 * Update full document (overwrite).
 	 *
-	 * @param id
-	 * @param entity
 	 * @param collectionName against which you want to make the query.
 	 * @return Single boolean. True means updated.
 	 */
-	public Single<Boolean> update(final String id, final String collectionName, final E entity){
+	public Single<Boolean> update(final String id, final String collectionName, final E entity) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -213,7 +204,6 @@ public class RxFirestoreSDK<E extends Entity> {
 		deliveryOpt.addHeader("_id", id);
 
 		return eventBus.<String>rxSend(TOPIC_UPDATE, Json.encode(entity.toMap()), deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> Boolean.valueOf(message));
 	}
@@ -222,11 +212,9 @@ public class RxFirestoreSDK<E extends Entity> {
 	/**
 	 * To delete a document, use the delete method. Deleting a document does not delete its subcollections!
 	 *
-	 * @param id
-	 * @param collectionName
 	 * @return Single boolean
 	 */
-	public Single<Boolean> delete(final String id, final String collectionName){
+	public Single<Boolean> delete(final String id, final String collectionName) {
 		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
 		DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
@@ -234,7 +222,6 @@ public class RxFirestoreSDK<E extends Entity> {
 		deliveryOpt.addHeader("_id", id);
 
 		return eventBus.<String>rxSend(TOPIC_DELETE, "", deliveryOpt)
-				.doOnError(error -> System.err.println("The error message is: " + error.getMessage()))
 				.map(Message::body)
 				.map(message -> Boolean.valueOf(message));
 	}
@@ -242,24 +229,27 @@ public class RxFirestoreSDK<E extends Entity> {
 	/**
 	 * addQueryListener, You can listen to a document changes (create, update and delete).
 	 *
-	 * @param query         to subscribe. Build your query with queryBuilder method.
-	 * @param eventsHandler will handler document changes. By default we provide an eventHandler that will give you a Flowable with all the document changes.
-	 * @return EventListenerResponse, contains two object.
-	 * "registration" will allow you to close the event flow and eventsFlow that will give you an events Flowable
+	 * @param query to subscribe. Build your query with queryBuilder method.
+	 * @param eventsHandler will handler document changes. By default we provide an eventHandler that will give you a
+	 * Flowable with all the document changes.
+	 * @return EventListenerResponse, contains two object. "registration" will allow you to close the event flow and
+	 * eventsFlow that will give you an events Flowable
 	 * <p>
 	 * example:
 	 * <p>
 	 * listener.getRegistration().remove();
 	 * <p>
-	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query,
-	 * and then all the changes until you close your listener.
+	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query, and then
+	 * all the changes until you close your listener.
 	 * <p>
 	 * example:
 	 * <p>
-	 * listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " + event.getModel()));
+	 * listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " +
+	 * event.getModel()));
 	 */
 
-	public EventListenerResponse<E> addQueryListener(final Query query, final Optional<EventListener<QuerySnapshot>> eventsHandler)
+	public EventListenerResponse<E> addQueryListener(final Query query,
+			final Optional<EventListener<QuerySnapshot>> eventsHandler)
 			throws InterruptedException, ExecutionException, TimeoutException {
 		return blockingFirestoreTemplate.addQueryListener(query, eventsHandler);
 	}

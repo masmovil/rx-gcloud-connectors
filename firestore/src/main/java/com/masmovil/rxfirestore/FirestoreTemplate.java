@@ -29,7 +29,6 @@ import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.eventbus.Message;
 import io.vertx.reactivex.core.eventbus.MessageConsumer;
 
-
 public class FirestoreTemplate extends AbstractVerticle {
 
 
@@ -43,17 +42,18 @@ public class FirestoreTemplate extends AbstractVerticle {
 	public static final String TOPIC_QUERY = "FIRESTORE_QUERY";
 	public static final String TOPIC_QUERY_BUILDER = "FIRESTORE_QUERY_BUILDER";
 
-	private final FirestoreOptions.Builder firestoreBuilder;
+	private final Firestore firestore;
 
 	public FirestoreTemplate() {
 
 		try {
 
-			String keyPath = Optional.ofNullable(System.getenv("GCLOUD_KEY_PATH")).orElseThrow(
-					() -> new IllegalArgumentException("GCLOUD_KEY_PATH is not set in the environment"));
+			String keyPath = Optional.ofNullable(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")).orElseThrow(
+					() -> new IllegalArgumentException("GOOGLE_APPLICATION_CREDENTIALS is not set in the environment"));
 
-			firestoreBuilder = FirestoreOptions.newBuilder().setCredentials(
-					GoogleCredentials.fromStream(new FileInputStream(new File(keyPath))).createScoped(SCOPES));
+			firestore = FirestoreOptions.newBuilder().setCredentials(
+					GoogleCredentials.fromStream(new FileInputStream(new File(keyPath))).createScoped(SCOPES)).build()
+					.getService();
 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -92,52 +92,34 @@ public class FirestoreTemplate extends AbstractVerticle {
 	}
 
 	public String insert(final HashMap<String, Object> entity, final String collectionName) {
-		try (Firestore db = firestoreBuilder.build().getService()) {
-			SingleEntityIdCallbackHandler singleEntityId = new SingleEntityIdCallbackHandler<String>();
-			ApiFuture<DocumentReference> response = db.collection(collectionName).add(entity);
-			ApiFutures.addCallback(response, singleEntityId, Runnable::run);
-			return (String) singleEntityId.getEntityID().blockingGet();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
+
+		SingleEntityIdCallbackHandler singleEntityId = new SingleEntityIdCallbackHandler<String>();
+		ApiFuture<DocumentReference> response = firestore.collection(collectionName).add(entity);
+
+		ApiFutures.addCallback(response, singleEntityId, Runnable::run);
+		return (String) singleEntityId.getEntityID().blockingGet();
 	}
 
 
 	public String empty(final String collectionName) {
-		try (Firestore db = firestoreBuilder.build().getService()) {
-			DocumentReference response = db.collection(collectionName).document();
-			return response.getId();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
+		DocumentReference response = firestore.collection(collectionName).document();
+		return response.getId();
 	}
 
 
 	public Boolean upsert(final HashMap<String, Object> entity, final String id, final String collectionName) {
-		try (Firestore db = firestoreBuilder.build().getService()) {
-			UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
-			ApiFuture<WriteResult> response = db.collection(collectionName).document(id).set(entity);
-			ApiFutures.addCallback(response, updateCallbackHandler, Runnable::run);
-			return updateCallbackHandler.isUpdated().blockingGet();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
+		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
+		ApiFuture<WriteResult> response = firestore.collection(collectionName).document(id).set(entity);
+		ApiFutures.addCallback(response, updateCallbackHandler, Runnable::run);
+		return updateCallbackHandler.isUpdated().blockingGet();
 	}
 
 
 	public Map<String, Object> get(final String id, final String collectionName) {
-		try (Firestore db = firestoreBuilder.build().getService()) {
-			SingleEntityCallbackHandler entityCallbackHandler = new SingleEntityCallbackHandler();
-			ApiFuture<DocumentSnapshot> response = db.collection(collectionName).document(id).get();
-			ApiFutures.addCallback(response, entityCallbackHandler, Runnable::run);
-			return entityCallbackHandler.getEntity().blockingGet();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
+		SingleEntityCallbackHandler entityCallbackHandler = new SingleEntityCallbackHandler();
+		ApiFuture<DocumentSnapshot> response = firestore.collection(collectionName).document(id).get();
+		ApiFutures.addCallback(response, entityCallbackHandler, Runnable::run);
+		return entityCallbackHandler.getEntity().blockingGet();
 	}
 
 
@@ -146,70 +128,60 @@ public class FirestoreTemplate extends AbstractVerticle {
 	}
 
 	public List<Map<String, Object>> get(final Query query) {
-		try (Firestore db = firestoreBuilder.build().getService()) {
-			CollectionReference q = db.collection(query.getCollectionName());
-			com.google.cloud.firestore.Query queryBuilder;
+		CollectionReference q = firestore.collection(query.getCollectionName());
+		com.google.cloud.firestore.Query queryBuilder;
 
-			if (query.isLimitSet()) {
-				queryBuilder = q.limit(query.getLimit());
-			} else {
-				queryBuilder = q.limit(20);
-			}
-
-			if (query.isOffsetSet()) {
-				queryBuilder.offset(query.getOffset());
-			}
-
-			HashMap<String, Object> equalTo = query.getEqualTo();
-			Iterator equalToIt = equalTo.entrySet().iterator();
-			while (equalToIt.hasNext()) {
-				Map.Entry pair = (Map.Entry) equalToIt.next();
-				queryBuilder = queryBuilder.whereEqualTo((String) pair.getKey(), pair.getValue());
-			}
-
-			HashMap<String, Object> arrayContains = query.getArrayContains();
-			Iterator arrayContainsIt = arrayContains.entrySet().iterator();
-			while (arrayContainsIt.hasNext()) {
-				Map.Entry pair = (Map.Entry) arrayContainsIt.next();
-				queryBuilder = queryBuilder.whereArrayContains((String) pair.getKey(), pair.getValue());
-			}
-
-			HashMap<String, Object> greaterThan = query.getGreaterThan();
-			Iterator greaterThanIt = greaterThan.entrySet().iterator();
-			while (greaterThanIt.hasNext()) {
-				Map.Entry pair = (Map.Entry) greaterThanIt.next();
-				queryBuilder = queryBuilder.whereGreaterThan((String) pair.getKey(), pair.getValue());
-			}
-
-			HashMap<String, Object> lessThan = query.getLessThan();
-			Iterator lessThanIt = lessThan.entrySet().iterator();
-			while (lessThanIt.hasNext()) {
-				Map.Entry pair = (Map.Entry) lessThanIt.next();
-				queryBuilder = queryBuilder.whereLessThan((String) pair.getKey(), pair.getValue());
-			}
-
-			QueryCallbackHandler queryCallbackHandler = new QueryCallbackHandler();
-			ApiFuture<QuerySnapshot> response = queryBuilder.get();
-			ApiFutures.addCallback(response, queryCallbackHandler, Runnable::run);
-
-			return queryCallbackHandler.getEntities().blockingGet();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
+		if (query.isLimitSet()) {
+			queryBuilder = q.limit(query.getLimit());
+		} else {
+			queryBuilder = q.limit(20);
 		}
+
+		if (query.isOffsetSet()) {
+			queryBuilder.offset(query.getOffset());
+		}
+
+		HashMap<String, Object> equalTo = query.getEqualTo();
+		Iterator equalToIt = equalTo.entrySet().iterator();
+		while (equalToIt.hasNext()) {
+			Map.Entry pair = (Map.Entry) equalToIt.next();
+			queryBuilder = queryBuilder.whereEqualTo((String) pair.getKey(), pair.getValue());
+		}
+
+		HashMap<String, Object> arrayContains = query.getArrayContains();
+		Iterator arrayContainsIt = arrayContains.entrySet().iterator();
+		while (arrayContainsIt.hasNext()) {
+			Map.Entry pair = (Map.Entry) arrayContainsIt.next();
+			queryBuilder = queryBuilder.whereArrayContains((String) pair.getKey(), pair.getValue());
+		}
+
+		HashMap<String, Object> greaterThan = query.getGreaterThan();
+		Iterator greaterThanIt = greaterThan.entrySet().iterator();
+		while (greaterThanIt.hasNext()) {
+			Map.Entry pair = (Map.Entry) greaterThanIt.next();
+			queryBuilder = queryBuilder.whereGreaterThan((String) pair.getKey(), pair.getValue());
+		}
+
+		HashMap<String, Object> lessThan = query.getLessThan();
+		Iterator lessThanIt = lessThan.entrySet().iterator();
+		while (lessThanIt.hasNext()) {
+			Map.Entry pair = (Map.Entry) lessThanIt.next();
+			queryBuilder = queryBuilder.whereLessThan((String) pair.getKey(), pair.getValue());
+		}
+
+		QueryCallbackHandler queryCallbackHandler = new QueryCallbackHandler();
+		ApiFuture<QuerySnapshot> response = queryBuilder.get();
+		ApiFutures.addCallback(response, queryCallbackHandler, Runnable::run);
+
+		return queryCallbackHandler.getEntities().blockingGet();
 	}
 
 
 	public Boolean update(final String id, final String collectionName, final HashMap<String, Object> entity) {
-		try (Firestore db = firestoreBuilder.build().getService()) {
-			UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
-			ApiFuture<WriteResult> response = db.collection(collectionName).document(id).update(entity);
-			ApiFutures.addCallback(response, updateCallbackHandler, Runnable::run);
-			return updateCallbackHandler.isUpdated().blockingGet();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
+		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
+		ApiFuture<WriteResult> response = firestore.collection(collectionName).document(id).update(entity);
+		ApiFutures.addCallback(response, updateCallbackHandler, Runnable::run);
+		return updateCallbackHandler.isUpdated().blockingGet();
 	}
 
 
@@ -254,83 +226,105 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 
 	public Boolean delete(final String id, final String collectionName) {
-		try (Firestore db = firestoreBuilder.build().getService()) {
-			DeleteCallbackHandler deleteCallbackHandler = new DeleteCallbackHandler();
-			ApiFuture<WriteResult> response = db.collection(collectionName).document(id).delete();
-			ApiFutures.addCallback(response, deleteCallbackHandler, Runnable::run);
+		DeleteCallbackHandler deleteCallbackHandler = new DeleteCallbackHandler();
+		ApiFuture<WriteResult> response = firestore.collection(collectionName).document(id).delete();
+		ApiFutures.addCallback(response, deleteCallbackHandler, Runnable::run);
 
-			return deleteCallbackHandler.isDeleted().blockingGet();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
+		return deleteCallbackHandler.isDeleted().blockingGet();
 	}
 
 	private void handlerInsert(Message<Object> message) {
-		String _collectionName = message.headers().get("_collectionName");
-		HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
-		String id = insert(entity, _collectionName);
+		try {
+			String _collectionName = message.headers().get("_collectionName");
+			HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
 
-		message.rxReply(id).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+			String id = insert(entity, _collectionName);
+			message
+					.rxReply(id)
+					.onErrorReturn(throwable -> {
+						message.fail(001, throwable.getMessage());
+						return message;
+					}).subscribe();
+
+		} catch (RuntimeException e) {
+			message.fail(001, e.getMessage());
+		}
 	}
 
 	private void handlerEmpty(Message<Object> message) {
-		String _collectionName = message.headers().get("_collectionName");
-		String id = empty(_collectionName);
+		try {
+			String _collectionName = message.headers().get("_collectionName");
+			String id = empty(_collectionName);
 
-		message.rxReply(id).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+			message.rxReply(id).onErrorReturn(throwable -> {
+				message.fail(001, throwable.getMessage());
+				return message;
+			}).subscribe();
+		} catch (RuntimeException e) {
+			message.fail(001, e.getMessage());
+		}
 	}
 
 	private void handlerUpsert(Message<Object> message) {
-		String _collectionName = message.headers().get("_collectionName");
-		String _id = message.headers().get("_id");
-		HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
-		Boolean id = upsert(entity, _id, _collectionName);
+		try {
+			String _collectionName = message.headers().get("_collectionName");
+			String _id = message.headers().get("_id");
+			HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
+			Boolean id = upsert(entity, _id, _collectionName);
 
-		message.rxReply(id).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+			message.rxReply(id).onErrorReturn(throwable -> {
+				message.fail(001, throwable.getMessage());
+				return message;
+			}).subscribe();
+		} catch (RuntimeException e) {
+			message.fail(001, e.getMessage());
+		}
 	}
 
 	private void handlerGet(Message<Object> message) {
-		String _collectionName = message.headers().get("_collectionName");
-		String _id = message.headers().get("_id");
-		Map<String, Object> entity = get(_id, _collectionName);
+		try {
+			String _collectionName = message.headers().get("_collectionName");
+			String _id = message.headers().get("_id");
+			Map<String, Object> entity = get(_id, _collectionName);
 
-		message.rxReply(Json.encode(entity)).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+			message.rxReply(Json.encode(entity)).onErrorReturn(throwable -> {
+				message.fail(001, throwable.getMessage());
+				return message;
+			}).subscribe();
+		} catch (RuntimeException e) {
+			message.fail(001, e.getMessage());
+		}
 	}
 
 	private void handlerUpdate(Message<Object> message) {
-		String _collectionName = message.headers().get("_collectionName");
-		String _id = message.headers().get("_id");
-		HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
-		Boolean updated = update(_id, _collectionName, entity);
+		try {
+			String _collectionName = message.headers().get("_collectionName");
+			String _id = message.headers().get("_id");
+			HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
+			Boolean updated = update(_id, _collectionName, entity);
 
-		message.rxReply(Json.encode(updated)).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+			message.rxReply(Json.encode(updated)).onErrorReturn(throwable -> {
+				message.fail(001, throwable.getMessage());
+				return message;
+			}).subscribe();
+		} catch (RuntimeException e) {
+			message.fail(001, e.getMessage());
+		}
 	}
 
 	private void handlerDelete(Message<Object> message) {
-		String _collectionName = message.headers().get("_collectionName");
-		String _id = message.headers().get("_id");
-		Boolean deleted = delete(_id, _collectionName);
+		try {
+			String _collectionName = message.headers().get("_collectionName");
+			String _id = message.headers().get("_id");
+			Boolean deleted = delete(_id, _collectionName);
 
-		message.rxReply(Json.encode(deleted)).onErrorReturn(throwable -> {
-			message.fail(001, throwable.getMessage());
-			return message;
-		}).subscribe();
+			message.rxReply(Json.encode(deleted)).onErrorReturn(throwable -> {
+				message.fail(001, throwable.getMessage());
+				return message;
+			}).subscribe();
+		} catch (RuntimeException e) {
+			message.fail(001, e.getMessage());
+		}
 	}
 
 	private void handlerQueryBuilder(Message<byte[]> message) {
@@ -341,10 +335,14 @@ public class FirestoreTemplate extends AbstractVerticle {
 	}
 
 	private void handlerQuery(Message<byte[]> message) {
-		Query query = (Query) SerializationUtils.deserialize(message.body());
-		List<Map<String, Object>> entityList = get(query);
+		try {
+			Query query = (Query) SerializationUtils.deserialize(message.body());
+			List<Map<String, Object>> entityList = get(query);
 
-		message.rxReply(Json.encode(entityList)).subscribe();
+			message.rxReply(Json.encode(entityList)).subscribe();
+		} catch (RuntimeException e) {
+			message.fail(001, e.getMessage());
+		}
 	}
 
 	/**
