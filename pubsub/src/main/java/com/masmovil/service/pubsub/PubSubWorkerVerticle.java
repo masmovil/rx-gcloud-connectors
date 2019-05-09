@@ -9,6 +9,8 @@ import com.google.pubsub.v1.PubsubMessage;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,6 +23,8 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
     private Subscriber subscriber = null;
     private Future<?> submitFuture = null;
     private ExecutorService eventProcessorExecutor = null;
+
+    Logger log = LoggerFactory.getLogger(PubSubSubscriberImpl.class);
 
     public PubSubWorkerVerticle(ProjectSubscriptionName projectSubscriptionName) {
         this.projectSubscriptionName = projectSubscriptionName;
@@ -58,6 +62,7 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
     }
 
     public MessageReceiver createMessageReceiver(EventBus eventBus) {
+        log.info("Creating message receiver");
         MessageReceiver messageReceiver = ((PubsubMessage pubsubMessage, AckReplyConsumer consumer) -> {
             try {
                 // handle incoming message, then ack/nack the received message
@@ -65,6 +70,7 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
                 String message = pubsubMessage.getData().toStringUtf8();
                 //System.out.println("Data : " + Json.encodePrettily(message));
 
+                log.info("Received message " + pubsubMessage.getMessageId() + " from pubsub");
                 eventBus.send(PubSubSubscriberImpl.EVENT_NAME, message);
                 consumer.ack();
             } catch (Exception e) {
