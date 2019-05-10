@@ -18,13 +18,28 @@ steps:
   - --location=europe
   - --keyring=builds
   - --key=nexus-settings
+- name: gcr.io/cloud-builders/gcloud
+  id: prepare-context-keyfile
+  volumes:
+    - name: 'keyfile'
+      path: '/root/keyfile'
+  args:
+    - kms
+    - decrypt
+    - --ciphertext-file=keyfile.json.encrypte
+    - --plaintext-file=/root/keyfile/keyfile.json
+    - --location=europe
+    - --keyring=builds
+    - --key=acceptance-test-keyfile
 - name: 'maven:3.6.0-jdk-11'
   id: build
   volumes:
   - name: 'm2'
     path: '/root/.m2'
+  - name: 'keyfile'
+    path: '/root/keyfile'
   entrypoint: '/bin/bash'
   args:
   - '-c'
   - |
-    mvn clean package
+    mvn clean test install

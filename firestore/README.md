@@ -1,16 +1,16 @@
 # RxFirestore (Alpha)
 <img align="right" src="https://github.com/masmovil/rx-gcloud-connectors/blob/master/firestore/firestoreLogo.png">
 
-This SDK is a Java Reactive `Firestore` connector.
-
-Google Cloud Firestore is a NoSQL document database built for automatic scaling, high performance, and ease of application development.
-While the Cloud Firestore interface has many of the same features as traditional databases, as a NoSQL database it differs from them in the way it describes relationships between data objects.
-
+RxFirestore is a [Firestore](https://cloud.google.com/firestore/) SDK written in a reactive way.
+We have thought about it for server microservices, not to persist the state of your application, directly from the device.
+You could have a look our [Motivation](#motivation) in order to understand WHY or  [design approach](#design-approach) to understand HOW. If you would like to discuss any point
+do not hesitate to contact us through email pablojose.gonzalez@bq.com.
 
 ## Index
 
+- [Current state](#current-state)
 - [Motivation](#motivation)
-  - [Design approach Version 1.0.4](#design-approach)
+- [Design approach Version 1.0.6](#design-approach)
 - [Minimum Requirements](#minimum-requirements)
 - [Maven useful commands](#maven-useful-commands)
 - [How to use it](#How-to-use-it)
@@ -24,6 +24,14 @@ While the Cloud Firestore interface has many of the same features as traditional
   - [Add Query Listener](#add-query-listener)
   - [Update](#update)
   - [Delete](#delete)
+
+## Current State
+
+RxFirestore is in its early stages, and we are actively looking for partner organizations and individuals to contribute to the project. Since the code is in active development, please do thorough testing and verification before implementing.
+
+## Contact Info
+
+Please contact pablojose.gonzalez@bq.com with any questions or comments.
 
 ## Motivation
 
@@ -61,11 +69,11 @@ This event bus will be consumed by a Vertx Actor (Worker Verticle), executing al
  <dependency>
     <groupId>com.masmovil.gcloud</groupId>
     <artifactId>firestore</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.6-SNAPSHOT</version>
  </dependency>
 ```
 
-2. Create your own repository and extends `RxFirestoreSDK`. You must provide your entity model as parameters.
+2. Create your own repository and extends `RxFirestoreSdk`. You must provide your entity model as parameters.
 
 for example:
 Imagine that you have a garage, and you would like to manage your vehicles catalog.
@@ -90,7 +98,7 @@ public class VehicleRepository extends RxFirestoreSDK<Vehicle> {
 }
 ```
 
-3. Add `GCLOUD_KEY_PATH` environment variable to your project, pointing to your keyfile.json
+3. Add `GOOGLE_APPLICATION_CREDENTIALS` environment variable to your project, pointing to your keyfile.json
 4. *(Optional)* Add `DB_THREAD_POOL_SIZE` environment variable to your project. Default value is set to the amount of cores * 2.
 
 ## API methods

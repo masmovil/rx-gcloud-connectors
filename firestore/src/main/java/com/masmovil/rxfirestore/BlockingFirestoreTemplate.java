@@ -1,12 +1,28 @@
+
+/*
+ * Copyright 2019 RxFirestore.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.masmovil.rxfirestore;
 
 import static com.masmovil.rxfirestore.FirestoreTemplate.SCOPES;
-import static io.vertx.core.Future.future;
 
 import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.ListenerRegistration;
 import io.reactivex.subjects.SingleSubject;
-import io.vertx.core.Future;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,7 +48,7 @@ import io.vertx.reactivex.core.Vertx;
 public class BlockingFirestoreTemplate<E extends Entity> {
 
 	private final Supplier<? extends Entity> supplier;
-	private final FirestoreOptions.Builder firestoreBuilder;
+	private final Firestore firestore;
 	private final SingleSubject<Vertx> vertx;
 
 	public BlockingFirestoreTemplate(Supplier<? extends Entity> entityConstructor, SingleSubject<Vertx> vertxSubject) {
@@ -41,11 +57,12 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 
 		try {
 
-			String keyPath = Optional.ofNullable(System.getenv("GCLOUD_KEY_PATH")).orElseThrow(
-					() -> new IllegalArgumentException("GCLOUD_KEY_PATH is not set in the environment"));
+			String keyPath = Optional.ofNullable(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")).orElseThrow(
+					() -> new IllegalArgumentException("GOOGLE_APPLICATION_CREDENTIALS is not set in the environment"));
 
-			firestoreBuilder = FirestoreOptions.newBuilder().setCredentials(
-					GoogleCredentials.fromStream(new FileInputStream(new File(keyPath))).createScoped(SCOPES));
+			firestore = FirestoreOptions.newBuilder().setCredentials(
+					GoogleCredentials.fromStream(new FileInputStream(new File(keyPath))).createScoped(SCOPES)).build()
+					.getService();
 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -64,7 +81,7 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 	 * <p>
 	 * listener.getRegistration().remove();
 	 * <p>
-	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query, and then
+	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query,and then
 	 * all the changes until you close your listener.
 	 * <p>
 	 * example:
@@ -76,13 +93,12 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 	public EventListenerResponse<E> addQueryListener(final Query query,
 			final Optional<EventListener<QuerySnapshot>> eventsHandler)
 			throws InterruptedException, ExecutionException, TimeoutException {
-		Future<EventListenerResponse<E>> res = future();
+
 		CompletableFuture<EventListenerResponse<E>> fut = new CompletableFuture<>();
 		vertx.subscribe(vertx -> {
 			vertx.executeBlocking(future -> {
-				Firestore db = firestoreBuilder.build().getService();
-				DefaultEventListener<E> defaultHandler = new DefaultEventListener<E>(supplier.get());
-				CollectionReference q = db.collection(query.getCollectionName());
+				final DefaultEventListener<E> defaultHandler = new DefaultEventListener<E>(supplier.get());
+				CollectionReference q = firestore.collection(query.getCollectionName());
 				com.google.cloud.firestore.Query queryBuilder;
 
 				queryBuilder = q.offset(0);
@@ -116,11 +132,16 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 				}
 
 				ListenerRegistration listener = queryBuilder.addSnapshotListener(eventsHandler.orElse(defaultHandler));
-				future.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
 				fut.complete(new EventListenerResponse<E>(defaultHandler.getSource(), listener));
-			}, res);
+
+			}, result -> {});
 		});
 
 		return fut.get(10, TimeUnit.SECONDS);
 	}
+
+	public Query queryBuilder(final String collectionName) {
+		return new Query(collectionName);
+	}
+
 }

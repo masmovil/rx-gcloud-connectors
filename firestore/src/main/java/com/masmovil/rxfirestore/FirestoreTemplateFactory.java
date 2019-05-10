@@ -1,3 +1,20 @@
+/*
+ * Copyright 2019 RxFirestore.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.masmovil.rxfirestore;
 
 import io.reactivex.subjects.SingleSubject;
@@ -18,21 +35,22 @@ public enum FirestoreTemplateFactory {
 
 	INSTANCE;
 
-	private final static long MAX_EXECUTION_TIME_SEC = 30;
+	private static final long MAX_EXECUTION_TIME_SEC = 30;
 
 	private EventBus eventBus;
 	private SingleSubject<Vertx> vertxSubject = SingleSubject.create();
 
-	public void init(Vertx ...vertxArg){
+	public void init(Vertx... vertxArg) {
 
 		EventBusOptions eventBusOpt = new EventBusOptions();
 
 		// Deployment options to set the verticle as a worker
 		String poolsize = Optional.ofNullable(System.getenv("DB_THREAD_POOL_SIZE")).orElse("");
-		int dbThreadPoolSize = poolsize.isEmpty()?Runtime.getRuntime().availableProcessors() * 2 :Integer.parseInt(poolsize);
+		int dbThreadPoolSize =
+				poolsize.isEmpty() ? Runtime.getRuntime().availableProcessors() * 2 : Integer.parseInt(poolsize);
 
-		if(poolsize.isEmpty()) {
-			System.out.println("No DB_THREAD_POOL_SIZE environment variable has set. Default value " + dbThreadPoolSize);
+		if (poolsize.isEmpty()) {
+			System.out.println("DB_THREAD_POOL_SIZE environment variable not found. Default value " + dbThreadPoolSize);
 		}
 
 		DeploymentOptions firestoreWorkerDeploymentOptions = new DeploymentOptions().setWorker(true)
@@ -42,17 +60,18 @@ public enum FirestoreTemplateFactory {
 				.setMaxWorkerExecuteTime(MAX_EXECUTION_TIME_SEC)
 				.setMaxWorkerExecuteTimeUnit(TimeUnit.SECONDS);
 
-		if(vertxArg.length == 0){
+		if (vertxArg.length == 0) {
 			// Hack in order to avoid a noisy blocked thread exception at initialization time. Only happens once.
 			DefaultChannelId.newInstance();
 
 			List<Class<? extends AbstractVerticle>> verticleList = Arrays.asList(FirestoreTemplate.class);
 			List<DeploymentOptions> deploymentOptionsList = Arrays.asList(firestoreWorkerDeploymentOptions);
 
-			Vertx vertxInstance = Runner.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
+			Vertx vertxInstance = Runner
+					.run(verticleList, new VertxOptions().setEventBusOptions(eventBusOpt), deploymentOptionsList);
 			eventBus = vertxInstance.eventBus();
 			vertxSubject.onSuccess(vertxInstance);
-		}else{
+		} else {
 			vertxArg[0].deployVerticle(FirestoreTemplate.class.getName(), firestoreWorkerDeploymentOptions);
 			eventBus = vertxArg[0].eventBus();
 			vertxSubject.onSuccess(vertxArg[0]);
