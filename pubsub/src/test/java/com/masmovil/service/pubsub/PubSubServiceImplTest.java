@@ -1,5 +1,6 @@
 package com.masmovil.service.pubsub;
 
+import com.masmovil.service.pubsub.exceptions.SubscriptionCreationException;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
 import io.vertx.core.VertxOptions;
@@ -39,7 +40,14 @@ class PubSubServiceImplTest {
         .boxed()
         .map(this::createConsumer)
         .forEach(integerConsumer ->
-            pubsub.addSubscriber(integerConsumer, Integer.class, vertx)
+            {
+              try {
+                pubsub.addSubscriber(integerConsumer, Integer.class, vertx);
+              } catch (SubscriptionCreationException e) {
+                e.printStackTrace();
+                fail(e);
+              }
+            }
         );
 
     System.out.println("publishing");

@@ -44,26 +44,21 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
         try {
             submitFuture = eventProcessorExecutor.submit(() -> {
                 //System.out.println("Start PubSub Worker Verticle");
-                try {
-                    // create a subscriber bound to the asynchronous message receiver
                     subscriber =
                         Subscriber.newBuilder(projectSubscriptionName, receiver).build();
-                    subscriber.startAsync().awaitTerminated();
-                } finally {
-                    if (subscriber != null) {
-                        subscriber.stopAsync().awaitTerminated();
-                    }
-                }
-
+                    subscriber.startAsync().awaitRunning();
             });
         } catch(Exception e) {
-            e.printStackTrace();
+            log.error("Error creating subscription", e);
+            stop();
+            throw e;
         }
     }
 
     public MessageReceiver createMessageReceiver(EventBus eventBus) {
         log.info("Creating message receiver");
-        MessageReceiver messageReceiver = ((PubsubMessage pubsubMessage, AckReplyConsumer consumer) -> {
+
+        return ((PubsubMessage pubsubMessage, AckReplyConsumer consumer) -> {
             try {
                 // handle incoming message, then ack/nack the received message
                 //System.out.println("Id : " + pubsubMessage.getMessageId());
@@ -76,10 +71,7 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         });
-
-        return messageReceiver;
     }
 
     @Override
