@@ -3,8 +3,7 @@
 
 RxFirestore is a [Firestore](https://cloud.google.com/firestore/) SDK written in a reactive way.
 We have thought about it for server microservices, not to persist the state of your application, directly from the device.
-You could have a look our [Motivation](#motivation) in order to understand WHY or  [design approach](#design-approach) to understand HOW. If you would like to discuss any point
-do not hesitate to contact us through email pablojose.gonzalez@bq.com.
+You could have a look our [Motivation](#motivation) in order to understand WHY or  [design approach](#design-approach) to understand HOW.
 
 ## Index
 
@@ -31,7 +30,7 @@ RxFirestore is in its early stages, and we are actively looking for partner orga
 
 ## Contact Info
 
-Please contact pablojose.gonzalez@bq.com with any questions or comments.
+If you would like to discuss any point do not hesitate to contact us through email pablojose.gonzalez@bq.com.
 
 ## Motivation
 
@@ -58,8 +57,8 @@ This event bus will be consumed by a Vertx Actor (Worker Verticle), executing al
 
 ## Maven useful commands
 
-* build RxFirestore project: ```mvn -pl .,rxfirestore clean install -DskipTests```
-* deploy RxFirestore SDK into nexus: ```mvn -pl rxfirestore deploy -DskipTests```
+* build RxFirestore project: ```mvn -pl .,firestore clean install -DskipTests```
+* deploy RxFirestore SDK into nexus: ```mvn -pl firestore deploy -DskipTests```
 
 ## How to use it
 
