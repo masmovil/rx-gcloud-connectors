@@ -1,3 +1,20 @@
+/*
+ * Copyright 2019 RxFirestore.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.masmovil.rxfirestore;
 
 import java.util.Map;
@@ -19,7 +36,7 @@ public class DefaultEventListener<E extends Entity> implements EventListener<Que
 	private PublishProcessor<E> source = PublishProcessor.create();
 	private Entity response;
 
-	public DefaultEventListener(Entity response){
+	public DefaultEventListener(Entity response) {
 		this.response = Objects.requireNonNull(response);
 	}
 
@@ -33,29 +50,29 @@ public class DefaultEventListener<E extends Entity> implements EventListener<Que
 
 		for (DocumentChange dc : snapshots.getDocumentChanges()) {
 			switch (dc.getType()) {
-			case ADDED:
-				Map<String, Object> dataAdded = dc.getDocument().getData();
-				dataAdded.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
-				dataAdded.put("_eventType",DocumentChange.Type.ADDED.toString());
-				source.onNext((E)response.fromJsonAsMap(dataAdded));
-				break;
+				case ADDED:
+					Map<String, Object> dataAdded = dc.getDocument().getData();
+					dataAdded.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
+					dataAdded.put("_eventType", DocumentChange.Type.ADDED.toString());
+					source.onNext((E) response.fromJsonAsMap(dataAdded));
+					break;
 
-			case MODIFIED:
-				Map<String, Object> dataUpdated = dc.getDocument().getData();
-				dataUpdated.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
-				dataUpdated.put("_eventType",DocumentChange.Type.MODIFIED.toString());
-				source.onNext((E)response.fromJsonAsMap(dataUpdated));
-				break;
+				case MODIFIED:
+					Map<String, Object> dataUpdated = dc.getDocument().getData();
+					dataUpdated.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
+					dataUpdated.put("_eventType", DocumentChange.Type.MODIFIED.toString());
+					source.onNext((E) response.fromJsonAsMap(dataUpdated));
+					break;
 
-			case REMOVED:
-				Map<String, Object> dataRemoved = dc.getDocument().getData();
-				dataRemoved.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
-				dataRemoved.put("_eventType",DocumentChange.Type.REMOVED.toString());
-				source.onNext((E)response.fromJsonAsMap(dataRemoved));
-				break;
+				case REMOVED:
+					Map<String, Object> dataRemoved = dc.getDocument().getData();
+					dataRemoved.put("_id", Optional.ofNullable(dc.getDocument().getId()).orElse("NONE"));
+					dataRemoved.put("_eventType", DocumentChange.Type.REMOVED.toString());
+					source.onNext((E) response.fromJsonAsMap(dataRemoved));
+					break;
 
-			default:
-				break;
+				default:
+					break;
 			}
 		}
 	}

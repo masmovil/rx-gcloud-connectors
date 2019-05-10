@@ -1,3 +1,20 @@
+/*
+ * Copyright 2019 RxFirestore.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.masmovil.rxfirestore;
 
 import com.google.cloud.firestore.CollectionReference;
@@ -40,6 +57,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 	public static final String TOPIC_UPDATE = "FIRESTORE_UPDATE";
 	public static final String TOPIC_DELETE = "FIRESTORE_DELETE";
 	public static final String TOPIC_QUERY = "FIRESTORE_QUERY";
+	public static final String TOPIC_CLOSE = "FIRESTORE_CLOSE";
 	public static final String TOPIC_QUERY_BUILDER = "FIRESTORE_QUERY_BUILDER";
 
 	private final Firestore firestore;
@@ -89,6 +107,9 @@ public class FirestoreTemplate extends AbstractVerticle {
 		MessageConsumer<byte[]> queryConsumer = firestoreEventBus.localConsumer(TOPIC_QUERY);
 		queryConsumer.handler(this::handlerQuery);
 
+		MessageConsumer<Void> closeClient = firestoreEventBus.localConsumer(TOPIC_CLOSE);
+		closeClient.handler(this::handlerClose);
+
 	}
 
 	public String insert(final HashMap<String, Object> entity, final String collectionName) {
@@ -97,7 +118,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 		ApiFuture<DocumentReference> response = firestore.collection(collectionName).add(entity);
 
 		ApiFutures.addCallback(response, singleEntityId, Runnable::run);
-		return (String) singleEntityId.getEntityID().blockingGet();
+		return (String) singleEntityId.getEntityId().blockingGet();
 	}
 
 
@@ -120,11 +141,6 @@ public class FirestoreTemplate extends AbstractVerticle {
 		ApiFuture<DocumentSnapshot> response = firestore.collection(collectionName).document(id).get();
 		ApiFutures.addCallback(response, entityCallbackHandler, Runnable::run);
 		return entityCallbackHandler.getEntity().blockingGet();
-	}
-
-
-	public Query queryBuilder(final String collectionName) {
-		return new Query(collectionName);
 	}
 
 	public List<Map<String, Object>> get(final Query query) {
@@ -177,6 +193,11 @@ public class FirestoreTemplate extends AbstractVerticle {
 	}
 
 
+	public Query queryBuilder(final String collectionName) {
+		return new Query(collectionName);
+	}
+
+
 	public Boolean update(final String id, final String collectionName, final HashMap<String, Object> entity) {
 		UpdateCallbackHandler updateCallbackHandler = new UpdateCallbackHandler();
 		ApiFuture<WriteResult> response = firestore.collection(collectionName).document(id).update(entity);
@@ -184,8 +205,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 		return updateCallbackHandler.isUpdated().blockingGet();
 	}
 
-
-/*
+	/*
 	public Single<Boolean> update(final Precondition precondition, final K id, final E entity) {
 		try (Firestore db = firestoreOpts.getService()) {
 			ApiFuture<WriteResult> response = db.collection(entity.getCollectionName()).document(id)
@@ -197,10 +217,10 @@ public class FirestoreTemplate extends AbstractVerticle {
 			e.printStackTrace();
 			throw new RuntimeException(e.getMessage());
 		}
-	}
-*/
+	}*/
 
-/*
+
+	/*
 	public Single<Boolean> update(final K id, final String collectionName, final HashMap<String, Object> fields) {
 		try (Firestore db = firestoreOpts.getService()) {
 			HashMap<String, Single<Boolean>> result = new HashMap();
@@ -221,8 +241,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 			e.printStackTrace();
 			throw new RuntimeException(e.getMessage());
 		}
-	}
-*/
+	}*/
 
 
 	public Boolean delete(final String id, final String collectionName) {
@@ -235,10 +254,10 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	private void handlerInsert(Message<Object> message) {
 		try {
-			String _collectionName = message.headers().get("_collectionName");
+			String collectionName = message.headers().get("_collectionName");
 			HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
 
-			String id = insert(entity, _collectionName);
+			String id = insert(entity, collectionName);
 			message
 					.rxReply(id)
 					.onErrorReturn(throwable -> {
@@ -253,8 +272,8 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	private void handlerEmpty(Message<Object> message) {
 		try {
-			String _collectionName = message.headers().get("_collectionName");
-			String id = empty(_collectionName);
+			String collectionName = message.headers().get("_collectionName");
+			String id = empty(collectionName);
 
 			message.rxReply(id).onErrorReturn(throwable -> {
 				message.fail(001, throwable.getMessage());
@@ -267,12 +286,12 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	private void handlerUpsert(Message<Object> message) {
 		try {
-			String _collectionName = message.headers().get("_collectionName");
-			String _id = message.headers().get("_id");
+			String collectionName = message.headers().get("_collectionName");
+			String id = message.headers().get("_id");
 			HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
-			Boolean id = upsert(entity, _id, _collectionName);
+			Boolean idUpdated = upsert(entity, id, collectionName);
 
-			message.rxReply(id).onErrorReturn(throwable -> {
+			message.rxReply(idUpdated).onErrorReturn(throwable -> {
 				message.fail(001, throwable.getMessage());
 				return message;
 			}).subscribe();
@@ -283,9 +302,9 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	private void handlerGet(Message<Object> message) {
 		try {
-			String _collectionName = message.headers().get("_collectionName");
-			String _id = message.headers().get("_id");
-			Map<String, Object> entity = get(_id, _collectionName);
+			String collectionName = message.headers().get("_collectionName");
+			String id = message.headers().get("_id");
+			Map<String, Object> entity = get(id, collectionName);
 
 			message.rxReply(Json.encode(entity)).onErrorReturn(throwable -> {
 				message.fail(001, throwable.getMessage());
@@ -298,10 +317,10 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	private void handlerUpdate(Message<Object> message) {
 		try {
-			String _collectionName = message.headers().get("_collectionName");
-			String _id = message.headers().get("_id");
+			String collectionName = message.headers().get("_collectionName");
+			String id = message.headers().get("_id");
 			HashMap entity = Json.decodeValue((String) message.body(), HashMap.class);
-			Boolean updated = update(_id, _collectionName, entity);
+			Boolean updated = update(id, collectionName, entity);
 
 			message.rxReply(Json.encode(updated)).onErrorReturn(throwable -> {
 				message.fail(001, throwable.getMessage());
@@ -314,9 +333,9 @@ public class FirestoreTemplate extends AbstractVerticle {
 
 	private void handlerDelete(Message<Object> message) {
 		try {
-			String _collectionName = message.headers().get("_collectionName");
-			String _id = message.headers().get("_id");
-			Boolean deleted = delete(_id, _collectionName);
+			String collectionName = message.headers().get("_collectionName");
+			String id = message.headers().get("_id");
+			Boolean deleted = delete(id, collectionName);
 
 			message.rxReply(Json.encode(deleted)).onErrorReturn(throwable -> {
 				message.fail(001, throwable.getMessage());
@@ -328,8 +347,8 @@ public class FirestoreTemplate extends AbstractVerticle {
 	}
 
 	private void handlerQueryBuilder(Message<byte[]> message) {
-		String _collectionName = message.headers().get("_collectionName");
-		Query query = queryBuilder(_collectionName);
+		String collectionName = message.headers().get("_collectionName");
+		Query query = queryBuilder(collectionName);
 
 		message.rxReply(SerializationUtils.serialize(query)).subscribe();
 	}
@@ -345,6 +364,14 @@ public class FirestoreTemplate extends AbstractVerticle {
 		}
 	}
 
+	private void handlerClose(Message<Void> message) {
+		try {
+			firestore.close();
+		} catch (Exception e) {
+			message.fail(001, e.getMessage());
+		}
+	}
+
 	/**
 	 * To delete a document with some given preconditions.
 	 *
@@ -353,7 +380,7 @@ public class FirestoreTemplate extends AbstractVerticle {
 	 * @param collectionName
 	 * @return Single boolean
 	 */
-/*
+	/*
 	public Single<Boolean> delete(final Precondition precondition, final K id, final String collectionName) {
 		try (Firestore db = firestoreOpts.getService()) {
 			ApiFuture<WriteResult> response = db.collection(collectionName).document(id).delete(precondition);

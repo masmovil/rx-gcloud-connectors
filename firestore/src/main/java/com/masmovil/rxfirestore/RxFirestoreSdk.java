@@ -1,5 +1,23 @@
+/*
+ * Copyright 2019 RxFirestore.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.masmovil.rxfirestore;
 
+import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_CLOSE;
 import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_DELETE;
 import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_EMPTY;
 import static com.masmovil.rxfirestore.FirestoreTemplate.TOPIC_GET;
@@ -33,7 +51,7 @@ import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.Message;
 
 /**
- * RxFirestoreSDK is a data access object implementation for Google Firestore database. In order to use it, your
+ * RxFirestoreSdk is a data access object implementation for Google Firestore database. In order to use it, your
  * repositories must extends this class, where E means the entity type that you want to manage in your collection
  * <p>
  * This implementation will give you commons methods in order to work with firestore, but you could overwrite them or
@@ -44,19 +62,22 @@ import io.vertx.reactivex.core.eventbus.Message;
  * manage all firestore connections. By default, DB_THREAD_POOL_SIZE will be set to the number of cores that you have X
  * 2.
  */
-public class RxFirestoreSDK<E extends Entity> {
+public class RxFirestoreSdk<E extends Entity> {
 
-	private final static long SEND_TIMEOUT_MS = 59000;
+	private static final long SEND_TIMEOUT_MS = 59000;
 	private final Supplier<? extends Entity> supplier;
 	private final BlockingFirestoreTemplate blockingFirestoreTemplate;
 
-	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor) {
+	public RxFirestoreSdk(Supplier<? extends Entity> entityConstructor) {
 		supplier = Objects.requireNonNull(entityConstructor);
 		FirestoreTemplateFactory.INSTANCE.init();
-		blockingFirestoreTemplate = new BlockingFirestoreTemplate(supplier, FirestoreTemplateFactory.INSTANCE.getVertx());
+		blockingFirestoreTemplate = new BlockingFirestoreTemplate(
+				supplier,
+				FirestoreTemplateFactory.INSTANCE.getVertx()
+		);
 	}
 
-	public RxFirestoreSDK(Supplier<? extends Entity> entityConstructor, Vertx vertx) {
+	public RxFirestoreSdk(Supplier<? extends Entity> entityConstructor, Vertx vertx) {
 		supplier = Objects.requireNonNull(entityConstructor);
 		FirestoreTemplateFactory.INSTANCE.init(vertx);
 		SingleSubject<Vertx> vertxSubject = SingleSubject.create();
@@ -66,14 +87,14 @@ public class RxFirestoreSDK<E extends Entity> {
 
 	/**
 	 * Insert create a Document with an auto-generate ID. Firestore auto-generated IDs do not provide any automatic
-	 * ordering. If you want to be able to order your documents by creation date, you should store a timestamp as a field
-	 * in the documents.
+	 * ordering. If you want to be able to order your documents by creation date, you should store a timestamp as a
+	 * field in the documents.
 	 *
 	 * @return Single document key ID.
 	 */
 	public Single<String> insert(final E entity) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setLocalOnly(true);
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", entity.getCollectionName());
@@ -84,15 +105,16 @@ public class RxFirestoreSDK<E extends Entity> {
 	}
 
 	/**
-	 * Empty create a document for a given collection, and return an an auto-generate ID. In some cases, it can be useful
-	 * to create a document reference with an auto-generated ID, then use the reference later through a upsert method.
+	 * Empty create a document for a given collection, and return an an auto-generate ID. In some cases,
+	 * it can be useful to create a document reference with an auto-generated ID,
+	 * then use the reference later through a upsert method.
 	 *
 	 * @param collectionName against which you want to make the query.
 	 * @return Single document key ID.
 	 */
 	public Single<String> empty(final String collectionName) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 
@@ -113,14 +135,18 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * var query = carsRepository.queryBuilder(CarModel.CARS_COLLECTION_NAME).whereEqualTo("brand","Toyota");
 	 */
 	public Single<Query> queryBuilder(final String collectionName) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 
 		return eventBus.<byte[]>rxSend(TOPIC_QUERY_BUILDER, "", deliveryOpt)
 				.map(Message::body)
 				.map(message -> SerializationUtils.deserialize(message));
+	}
+
+	public Query queryBuilderSync(final String collectionName) {
+		return blockingFirestoreTemplate.queryBuilder(collectionName);
 	}
 
 	/**
@@ -130,8 +156,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return a single list of documents that match query criteria.
 	 */
 	public Single<List<E>> get(Query query) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 
 		return eventBus.<String>rxSend(TOPIC_QUERY, SerializationUtils.serialize(query), deliveryOpt)
@@ -142,6 +168,28 @@ public class RxFirestoreSDK<E extends Entity> {
 					});
 					data.stream().forEach(elem -> result.add((E) supplier.get().fromJsonAsMap(elem)));
 					return result;
+				});
+	}
+
+	/**
+	 * get will retrieve a Document by ID for a given collection name.
+	 *
+	 * @param collectionName against which you want to make the query.
+	 * @param id , document ID that you would like to retrieve
+	 * @return Single document
+	 */
+	public Single<E> get(final String id, final String collectionName) {
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
+		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
+		deliveryOpt.addHeader("_collectionName", collectionName);
+		deliveryOpt.addHeader("_id", id);
+
+		return eventBus.<String>rxSend(TOPIC_GET, "", deliveryOpt)
+				.map(Message::body)
+				.map(message -> {
+					HashMap data = Json.decodeValue(message, HashMap.class);
+					return (E) supplier.get().fromJsonAsMap(data);
 				});
 	}
 
@@ -157,8 +205,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single boolean.
 	 */
 	public Single<Boolean> upsert(final String id, final String collectionName, final E entity) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 		deliveryOpt.addHeader("_id", id);
@@ -169,36 +217,14 @@ public class RxFirestoreSDK<E extends Entity> {
 	}
 
 	/**
-	 * get will retrieve a Document by ID for a given collection name.
-	 *
-	 * @param collectionName against which you want to make the query.
-	 * @param id , document ID that you would like to retrieve
-	 * @return Single document
-	 */
-	public Single<E> get(final String id, final String collectionName) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
-		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
-		deliveryOpt.addHeader("_collectionName", collectionName);
-		deliveryOpt.addHeader("_id", id);
-
-		return eventBus.<String>rxSend(TOPIC_GET, "", deliveryOpt)
-				.map(Message::body)
-				.map(message -> {
-					HashMap data = Json.decodeValue(message, HashMap.class);
-					return (E) supplier.get().fromJsonAsMap(data);
-				});
-	}
-
-	/**
 	 * Update full document (overwrite).
 	 *
 	 * @param collectionName against which you want to make the query.
 	 * @return Single boolean. True means updated.
 	 */
 	public Single<Boolean> update(final String id, final String collectionName, final E entity) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 		deliveryOpt.addHeader("_id", id);
@@ -215,8 +241,8 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * @return Single boolean
 	 */
 	public Single<Boolean> delete(final String id, final String collectionName) {
-		EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
-		DeliveryOptions deliveryOpt = new DeliveryOptions();
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
 		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
 		deliveryOpt.addHeader("_collectionName", collectionName);
 		deliveryOpt.addHeader("_id", id);
@@ -239,7 +265,7 @@ public class RxFirestoreSDK<E extends Entity> {
 	 * <p>
 	 * listener.getRegistration().remove();
 	 * <p>
-	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query, and then
+	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query,and then
 	 * all the changes until you close your listener.
 	 * <p>
 	 * example:
@@ -252,6 +278,13 @@ public class RxFirestoreSDK<E extends Entity> {
 			final Optional<EventListener<QuerySnapshot>> eventsHandler)
 			throws InterruptedException, ExecutionException, TimeoutException {
 		return blockingFirestoreTemplate.addQueryListener(query, eventsHandler);
+	}
+
+	public void closeConnection() {
+		final EventBus eventBus = FirestoreTemplateFactory.INSTANCE.getEventBus();
+		final DeliveryOptions deliveryOpt = new DeliveryOptions();
+		deliveryOpt.setSendTimeout(SEND_TIMEOUT_MS);
+		eventBus.publish(TOPIC_CLOSE, null, deliveryOpt);
 	}
 
 }
