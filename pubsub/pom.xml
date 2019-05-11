@@ -16,6 +16,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <vertx-commons-lib>1.0.0-SNAPSHOT</vertx-commons-lib>
     </properties>
 
 
@@ -34,7 +35,7 @@
         <dependency>
             <groupId>com.masmovil</groupId>
             <artifactId>vertx-commons-lib</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${vertx-commons-lib}</version>
         </dependency>
 
         <dependency>

@@ -44,3 +44,5 @@ cloudStorage/.idea/
 keyfile.json
 pom.xml.releaseBackup
 */pom.xml.releaseBackup
+release.properties
+*/release.properties
