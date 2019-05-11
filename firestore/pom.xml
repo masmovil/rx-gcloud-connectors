@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>com.masmovil.gcloud</groupId>
-    <artifactId>RxGcloudConnectors</artifactId>
-    <version>1.0.1</version>
-    <relativePath>../pom.xml</relativePath>
-  </parent>
 
   <groupId>com.masmovil.gcloud</groupId>
   <artifactId>firestore</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.2-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 
   <properties>
+    <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+    <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+    <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
+    <junit-platform-launcher.version>1.2.0</junit-platform-launcher.version>
+    <junit.version>4.12</junit.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven-build-helper-plugin.version>3.0.0</maven-build-helper-plugin.version>
     <firestore.version>0.83.0-beta</firestore.version>
     <powermock.version>1.7.4</powermock.version>
     <apache.commons.version>3.8.1</apache.commons.version>
+    <vertx.version>3.6.3</vertx.version>
+    <assertj.version>3.8.0</assertj.version>
   </properties>
 
   <distributionManagement>
@@ -40,6 +41,41 @@
     <url>https://github.com/masmovil/rx-gcloud-connectors/tree/master/firestore</url>
     <tag>HEAD</tag>
   </scm>
+
+  <dependencyManagement>
+    <dependencies>
+
+      <!-- Test -->
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-junit5</artifactId>
+        <version>${vertx.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <version>${junit-platform-launcher.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mokito.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>${assertj.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
 
@@ -108,35 +144,35 @@
             <!--<GOOGLE_APPLICATION_CREDENTIALS>../keyfile.json</GOOGLE_APPLICATION_CREDENTIALS>-->
             <GOOGLE_APPLICATION_CREDENTIALS>/root/keyfile/keyfile.json</GOOGLE_APPLICATION_CREDENTIALS>
           </environmentVariables>
-          </configuration>
-        </plugin>
+        </configuration>
+      </plugin>
 
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.0.0</version>
-          <configuration>
-            <configLocation>mm_checks.xml</configLocation>
-          </configuration>
-          <executions>
-            <execution>
-              <id>validate</id>
-              <phase>validate</phase>
-              <configuration>
-                <configLocation>mm_checks.xml</configLocation>
-                <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
-                <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
-                <encoding>UTF-8</encoding>
-                <consoleOutput>true</consoleOutput>
-                <failsOnError>true</failsOnError>
-                <failOnViolation>true</failOnViolation>
-              </configuration>
-              <goals>
-                <goal>check</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <configLocation>mm_checks.xml</configLocation>
+        </configuration>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <configuration>
+              <configLocation>mm_checks.xml</configLocation>
+              <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+              <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
+              <encoding>UTF-8</encoding>
+              <consoleOutput>true</consoleOutput>
+              <failsOnError>true</failsOnError>
+              <failOnViolation>true</failOnViolation>
+            </configuration>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 
       <plugin>
         <artifactId>maven-deploy-plugin</artifactId>
@@ -194,47 +230,68 @@
             </goals>
           </execution>
 
-          <execution>
-            <id>attach-javadoc</id>
-            <goals />
-          </execution>
+          <!-- <execution>
+             <id>attach-javadoc</id>
+             <goals />
+           </execution>-->
         </executions>
       </plugin>
 
 
+    </plugins>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-scm-plugin</artifactId>
+          <version>1.11.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+          </configuration>
+        </plugin>
       </plugins>
-    </build>
+    </pluginManagement>
 
-    <profiles>
+  </build>
 
-        <!-- GPG Signature on release -->
-      <profile>
-        <id>release-sign-artifacts</id>
-        <activation>
-          <property>
-            <name>performRelease</name>
-            <value>true</value>
-          </property>
-        </activation>
-        <build>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-gpg-plugin</artifactId>
-              <version>1.6</version>
-              <executions>
-                <execution>
-                  <id>sign-artifacts</id>
-                  <phase>verify</phase>
-                  <goals>
-                    <goal>sign</goal>
-                  </goals>
-                </execution>
-              </executions>
-            </plugin>
-          </plugins>
-        </build>
-      </profile>
+  <profiles>
+
+    <!-- GPG Signature on release -->
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
 
     <profile>
       <id>firestore-example</id>
@@ -283,4 +340,24 @@
       </build>
     </profile>
   </profiles>
+
+
+  <pluginRepositories>
+    <pluginRepository>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>protoc-plugin</id>
+      <url>https://dl.bintray.com/sergei-ivanov/maven/</url>
+    </pluginRepository>
+  </pluginRepositories>
+
 </project>

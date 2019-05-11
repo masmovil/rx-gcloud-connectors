@@ -76,18 +76,19 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 	 * @param eventsHandler will handler document changes. By default we provide an eventHandler that will give you a
 	 * Flowable with all the document changes.
 	 * @return EventListenerResponse, contains two object. "registration" will allow you to close the event flow
+	 * @throws TimeoutException,ExecutionException,InterruptedException
 	 * <p>
 	 * example:
 	 * <p>
-	 * listener.getRegistration().remove();
+	 * {@code listener.getRegistration().remove();}
 	 * <p>
 	 * "eventsFlow" represent a flow of changes. Firstly you will get all the events that match with your query,and then
 	 * all the changes until you close your listener.
 	 * <p>
 	 * example:
 	 * <p>
-	 * listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " +
-	 * event.getModel()));
+	 * {@code listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " +
+	 * event.getModel()));}
 	 */
 
 	public EventListenerResponse<E> addQueryListener(final Query query,
