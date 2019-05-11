@@ -42,3 +42,5 @@ cloudStorage/.idea/
 .idea/
 *.iml
 keyfile.json
+pom.xml.releaseBackup
+*/pom.xml.releaseBackup
