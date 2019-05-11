@@ -76,7 +76,9 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 	 * @param eventsHandler will handler document changes. By default we provide an eventHandler that will give you a
 	 * Flowable with all the document changes.
 	 * @return EventListenerResponse, contains two object. "registration" will allow you to close the event flow
-	 * @throws TimeoutException,ExecutionException,InterruptedException
+	 * @throws TimeoutException
+	 * @throws ExecutionException
+	 * @throws InterruptedException
 	 * <p>
 	 * example:
 	 * <p>
