@@ -260,9 +260,9 @@ public class RxFirestoreSdk<E extends Entity> {
 	 * Flowable with all the document changes.
 	 * @return EventListenerResponse, contains two object. "registration" will allow you to close the event flow and
 	 * eventsFlow that will give you an events Flowable
-	 * @throws TimeoutException
-	 * @throws ExecutionException
-	 * @throws InterruptedException
+	 * @throws TimeoutException default timeout after 10 seconds
+	 * @throws ExecutionException if something weird happens
+	 * @throws InterruptedException if something weird happens as somebody break connection.
 	 * <p>
 	 * example:
 	 * <p>
