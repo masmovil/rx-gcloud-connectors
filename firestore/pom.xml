@@ -5,7 +5,29 @@
   <groupId>com.masmovil.gcloud</groupId>
   <artifactId>firestore</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
+
+  <name>rxFirestore Gcloud Connectors</name>
+  <url>https://github.com/masmovil/rx-gcloud-connectors/tree/master/firestore</url>
+  <description>
+    The aim of this project is develop reactive firestore connector
+  </description>
+
+  <developers>
+    <developer>
+      <name>Pablo Gonzalez Granados</name>
+      <email>pablo.gonzalez.granados@gmail.com</email>
+      <organization>masmovil</organization>
+      <organizationUrl>https://www.grupomasmovil.com/en/</organizationUrl>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>Apache License version 2.0</name>
+      <url>https://github.com/masmovil/rx-gcloud-connectors/blob/master/firestore/LICENSE.txt</url>
+    </license>
+  </licenses>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
