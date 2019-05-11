@@ -87,7 +87,9 @@ public class BlockingFirestoreTemplate<E extends Entity> {
 	 * <p>
 	 * example:
 	 * <p>
-	 * {@code listener.getEventsFlow().subscribe(event -> System.out.println("Event Type:"+ event.getEventType() + " model: " +
+	 * {@code
+	 * listener.getEventsFlow().subscribe(event ->
+	 * System.out.println("Event Type:"+ event.getEventType() + " model: " +
 	 * event.getModel()));}
 	 */
 
