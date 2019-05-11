@@ -5,7 +5,7 @@
   <groupId>com.masmovil.gcloud</groupId>
   <artifactId>firestore</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -39,7 +39,7 @@
     <connection>scm:git:git://github.com:masmovil/rx-gcloud-connectors.git</connection>
     <developerConnection>scm:git:git@github.com:masmovil/rx-gcloud-connectors.git</developerConnection>
     <url>https://github.com/masmovil/rx-gcloud-connectors/tree/master/firestore</url>
-    <tag>firestore-1.0.1</tag>
+    <tag>firestore-1.0.0</tag>
   </scm>
 
   <dependencyManagement>
