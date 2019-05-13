@@ -32,14 +32,25 @@ steps:
     - --keyring=builds
     - --key=acceptance-test-keyfile
 - name: 'maven:3.6.0-jdk-11'
+  id: build-rxfirestore
+  volumes:
+    - name: 'm2'
+      path: '/root/.m2'
+    - name: 'keyfile'
+      path: '/root/keyfile'
+  entrypoint: '/bin/bash'
+  args:
+    - '-c'
+    - |
+      cd firestore && mvn clean test install
+- name: 'maven:3.6.0-jdk-11'
   id: build
   volumes:
   - name: 'm2'
     path: '/root/.m2'
-  - name: 'keyfile'
-    path: '/root/keyfile'
   entrypoint: '/bin/bash'
   args:
   - '-c'
   - |
-    mvn clean test install
+    mvn clean install
+
