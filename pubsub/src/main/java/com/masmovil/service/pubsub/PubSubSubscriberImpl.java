@@ -3,10 +3,13 @@ package com.masmovil.service.pubsub;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import io.reactivex.functions.Consumer;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.MessageConsumer;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Represents a subscriber that is subscribed to a Pub/Sub channel. Creates a
@@ -19,6 +22,11 @@ import io.vertx.reactivex.core.eventbus.MessageConsumer;
  * @param <T> The type of the messages that this subscriber will receive.
  */
 public class PubSubSubscriberImpl<T> extends PubSubSubscriber<T> {
+
+  private final static int workerInstance = 1;
+  private final static int workerPoolSize = 1;
+  private final static TimeUnit workerTimeUnit = TimeUnit.HOURS;
+  private final static int workerTimeAmount = 2;
 
   public static final String EVENT_NAME = "pubsub.rejected.porta.event";
   private final PubSubWorkerVerticle pubSubWorkerVerticle;
@@ -50,14 +58,31 @@ public class PubSubSubscriberImpl<T> extends PubSubSubscriber<T> {
         log.error("Error when deserializing element of class " + tClass.getName(), e);
       }
     });
-    vertx.deployVerticle(pubSubWorkerVerticle);
+
+    DeploymentOptions workerDeploymentOptions = new DeploymentOptions()
+        .setWorker(true)
+        .setInstances(workerInstance)
+        .setWorkerPoolName("worker")
+        .setWorkerPoolSize(workerPoolSize)
+        .setMaxWorkerExecuteTime(workerTimeAmount)
+        .setMaxWorkerExecuteTimeUnit(workerTimeUnit);
+
+    vertx.rxDeployVerticle(pubSubWorkerVerticle, workerDeploymentOptions)
+    .subscribe(id -> log.info("deployed " + id),
+        Throwable::printStackTrace);
+
 
   }
 
   @Override
   public void dispose() {
     try {
-      vertx.rxUndeploy(pubSubWorkerVerticle.deploymentID()).blockingAwait();
+      log.info("Disposing pubsubsubscriberimpl");
+      pubSubWorkerVerticle.stop();
+//      vertx.rxUndeploy(pubSubWorkerVerticle.deploymentID()).subscribe(
+//          () -> {},
+//          Throwable::printStackTrace
+//      );
     } catch (Exception e) {
       log.warn("Problem trying to stop pubsub, stopping anyway...", e);
     } finally {

@@ -6,16 +6,15 @@ import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.PubsubMessage;
+import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 public class PubSubWorkerVerticle extends AbstractVerticle {
 
@@ -24,10 +23,11 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
     private Future<?> submitFuture = null;
     private ExecutorService eventProcessorExecutor = null;
 
-    Logger log = LoggerFactory.getLogger(PubSubSubscriberImpl.class);
+    Logger log = LoggerFactory.getLogger(PubSubWorkerVerticle.class);
 
     public PubSubWorkerVerticle(ProjectSubscriptionName projectSubscriptionName) {
         this.projectSubscriptionName = projectSubscriptionName;
+        log.info(projectSubscriptionName.getFieldValuesMap());
     }
 
     @Override
@@ -42,17 +42,31 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
         MessageReceiver receiver = createMessageReceiver(eventBus);
 
         try {
+
             submitFuture = eventProcessorExecutor.submit(() -> {
-                //System.out.println("Start PubSub Worker Verticle");
+                System.out.println("Start PubSub Worker Verticle");
+                Subscriber subscriber = null;
+
+                try {
                     subscriber =
                         Subscriber.newBuilder(projectSubscriptionName, receiver).build();
-                    subscriber.startAsync().awaitRunning();
+
+                    subscriber.startAsync().awaitTerminated();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (subscriber != null) {
+                        System.out.println("Shutdown PubSub Async Subscriber");
+                        subscriber.stopAsync().awaitTerminated();
+                    }
+                }
             });
         } catch(Exception e) {
             log.error("Error creating subscription", e);
             stop();
-            throw e;
+                throw e;
         }
+
     }
 
     public MessageReceiver createMessageReceiver(EventBus eventBus) {
@@ -79,9 +93,12 @@ public class PubSubWorkerVerticle extends AbstractVerticle {
         if (subscriber != null) {
             subscriber.stopAsync().awaitTerminated();
         }
+
         if (submitFuture != null) {
-            submitFuture.cancel(true);
+            log.info("Stopping future");
+            log.info("Stopped future? " + submitFuture.cancel(true));
         }
+
         if (eventProcessorExecutor != null) {
             eventProcessorExecutor.shutdown();
         }

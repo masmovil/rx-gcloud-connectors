@@ -68,6 +68,20 @@ class PubSubServiceImplTest {
     assertTrue(actual.containsAll(expected));
   }
 
+  @Test
+  void publish1() throws Exception {
+
+    PubSubService pubSubService = PubSubService.fromEnv(
+        "TEST_PUB_SUB_PROJECT_ID",
+        "TEST_PUB_SUB_TOPIC_ID",
+        "TEST_PUB_SUB_SUBSCRIPTION_ID");
+
+    pubSubService.addSubscriber(createConsumer(0), Integer.class, vertx);
+
+
+
+  }
+
   private Consumer<Integer> createConsumer(int i) {
     return integer -> {
       System.out.println("received in subscriber " + i + " the emitted value " + integer);
