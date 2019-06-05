@@ -6,6 +6,7 @@ import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
+import com.masmovil.service.pubsub.exceptions.SubscriptionCreationException;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
@@ -93,7 +94,12 @@ public class PubSubServiceImpl implements PubSubService {
   }
 
   @Override
-  public <T> PubSubSubscriberImpl<T> addSubscriber(Consumer<T> consumer, Class<T> tClass, Vertx vertx) {
-    return new PubSubSubscriberImpl<>(vertx, tClass, projectSubscriptionName, consumer);
+  public <T> PubSubSubscriberImpl<T> addSubscriber(Consumer<T> consumer, Class<T> tClass, Vertx vertx) throws SubscriptionCreationException {
+    try {
+      PubSubSubscriberImpl<T> subscriber = new PubSubSubscriberImpl<>(vertx, tClass, projectSubscriptionName, consumer);
+      return subscriber;
+    } catch (Exception e) {
+      throw new SubscriptionCreationException(e);
+    }
   }
 }

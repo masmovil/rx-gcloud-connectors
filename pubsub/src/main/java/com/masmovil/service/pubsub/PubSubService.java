@@ -1,5 +1,6 @@
 package com.masmovil.service.pubsub;
 
+import com.masmovil.service.pubsub.exceptions.SubscriptionCreationException;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
 import io.vertx.reactivex.core.Vertx;
@@ -23,7 +24,7 @@ public interface PubSubService {
    * @param <T> The type of the incoming messages
    * @return A disposable reference to the element which is processing the incoming elements
    */
-  <T> PubSubSubscriber<T> addSubscriber(Consumer<T> consumer, Class<T> tClass, Vertx vertx);
+  <T> PubSubSubscriber<T> addSubscriber(Consumer<T> consumer, Class<T> tClass, Vertx vertx) throws SubscriptionCreationException;
 
   static PubSubService fromValues(String projectId, String topicId, String subscriptionId) {
     return new PubSubServiceImpl(projectId, topicId, subscriptionId);

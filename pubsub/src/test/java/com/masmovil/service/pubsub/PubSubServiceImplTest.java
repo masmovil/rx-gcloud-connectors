@@ -1,5 +1,6 @@
 package com.masmovil.service.pubsub;
 
+import com.masmovil.service.pubsub.exceptions.SubscriptionCreationException;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
 import io.vertx.core.VertxOptions;
@@ -39,7 +40,14 @@ class PubSubServiceImplTest {
         .boxed()
         .map(this::createConsumer)
         .forEach(integerConsumer ->
-            pubsub.addSubscriber(integerConsumer, Integer.class, vertx)
+            {
+              try {
+                pubsub.addSubscriber(integerConsumer, Integer.class, vertx);
+              } catch (SubscriptionCreationException e) {
+                e.printStackTrace();
+                fail(e);
+              }
+            }
         );
 
     System.out.println("publishing");
@@ -58,6 +66,20 @@ class PubSubServiceImplTest {
     System.out.println("published all");
     assertTrue(expected.containsAll(actual));
     assertTrue(actual.containsAll(expected));
+  }
+
+  @Test
+  void publish1() throws Exception {
+
+    PubSubService pubSubService = PubSubService.fromEnv(
+        "TEST_PUB_SUB_PROJECT_ID",
+        "TEST_PUB_SUB_TOPIC_ID",
+        "TEST_PUB_SUB_SUBSCRIPTION_ID");
+
+    pubSubService.addSubscriber(createConsumer(0), Integer.class, vertx);
+
+
+
   }
 
   private Consumer<Integer> createConsumer(int i) {
