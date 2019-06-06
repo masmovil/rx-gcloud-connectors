@@ -1,24 +1,26 @@
 package com.masmovil.service.pubsub;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.pubsub.v1.Publisher;
+import com.google.cloud.pubsub.v1.TopicAdminClient;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
 import com.masmovil.service.pubsub.exceptions.SubscriptionCreationException;
+
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.reactivex.core.Vertx;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class PubSubServiceImpl implements PubSubService {
 
@@ -40,6 +42,21 @@ public class PubSubServiceImpl implements PubSubService {
   PubSubServiceImpl(String projectId, String topicId, String subscriptionId) {
     topicName = ProjectTopicName.of(projectId, topicId);
     projectSubscriptionName = ProjectSubscriptionName.of(projectId, subscriptionId);
+
+    // Attempt to create the pubsub  topic if it does not exists
+    TopicAdminClient topicAdminClient = null;
+    try {
+      log.info("Attempting to create pubsub topic " + topicId);
+      topicAdminClient =  TopicAdminClient.create();
+      topicAdminClient.createTopic(ProjectTopicName.of(projectId, topicId));
+      log.info("Created topic " + topicId);
+    } catch(Exception e) {
+        log.info("Could not create topic " + topicId + ". Already exists?");
+        log.debug(e.getMessage());
+    } finally {
+      if (topicAdminClient != null)
+        topicAdminClient.close();
+    }
   }
 
   /**

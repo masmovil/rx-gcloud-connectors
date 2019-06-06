@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -12,11 +13,11 @@
     <groupId>com.masmovil.gcloud</groupId>
     <artifactId>pubsub</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.3-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vertx-commons-lib>1.0.0-SNAPSHOT</vertx-commons-lib>
+        <vertx-commons-lib>1.0.0</vertx-commons-lib>
     </properties>
 
 
@@ -34,8 +35,9 @@
     <dependencies>
         <dependency>
             <groupId>com.masmovil</groupId>
-            <artifactId>vertx-commons-lib</artifactId>
+            <artifactId>vx-commons-lib</artifactId>
             <version>${vertx-commons-lib}</version>
+            <type>pom</type>
         </dependency>
 
         <dependency>
@@ -48,7 +50,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-config-yaml</artifactId>
-            <version>3.6.3</version>
+            <version>${vertx.version}</version>
         </dependency>
 
         <!-- This one sencond -->
@@ -116,7 +118,28 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
 
+                            <finalName>reject-porta-publisher-with-dependencies</finalName>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${main.class}</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
