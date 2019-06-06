@@ -52,7 +52,7 @@ public class PubSubServiceImpl implements PubSubService {
       log.info("Created topic " + topicId);
     } catch(Exception e) {
         log.info("Could not create topic " + topicId + ". Already exists?");
-        log.debug(e.getMessage());
+        log.info(e.getMessage());
     } finally {
       if (topicAdminClient != null)
         topicAdminClient.close();
