@@ -42,21 +42,21 @@ public class PubSubServiceImpl implements PubSubService {
   PubSubServiceImpl(String projectId, String topicId, String subscriptionId) {
     topicName = ProjectTopicName.of(projectId, topicId);
     projectSubscriptionName = ProjectSubscriptionName.of(projectId, subscriptionId);
+    createTopicIfNotExists(topicId).subscribe();
 
-    // Attempt to create the pubsub  topic if it does not exists
-    TopicAdminClient topicAdminClient = null;
-    try {
-      log.info("Attempting to create pubsub topic " + topicId);
-      topicAdminClient =  TopicAdminClient.create();
-      topicAdminClient.createTopic(ProjectTopicName.of(projectId, topicId));
-      log.info("Created topic " + topicId);
-    } catch(Exception e) {
-        log.info("Could not create topic " + topicId + ". Already exists?");
-        log.info(e.getMessage());
-    } finally {
-      if (topicAdminClient != null)
-        topicAdminClient.close();
-    }
+  }
+
+  private Completable createTopicIfNotExists(String topicId) {
+    return Completable.fromAction(() -> {
+      try (TopicAdminClient topicAdminClient = TopicAdminClient.create()) {
+        log.info("Attempting to create pubsub topic " + topicId);
+        topicAdminClient.createTopic(topicName);
+        log.info("Created topic " + topicId);
+      } catch(Exception e) {
+          log.info("Could not create topic " + topicId + ". Already exists?");
+          log.info(e.getMessage());
+      }
+    });
   }
 
   /**
