@@ -43,7 +43,8 @@ public class PubSubSubscriberImpl<T> extends PubSubSubscriber<T> {
     MessageConsumer<Object> localConsumer = vertx.eventBus().localConsumer(EVENT_NAME, message -> {
       ObjectMapper objectMapper = new ObjectMapper();
       try {
-        T extractedT = objectMapper.readValue(message.body().toString(), tClass);
+        T extractedT = (tClass == String.class)? (T) message.body().toString():
+                objectMapper.readValue(message.body().toString(), tClass);
         tConsumer.accept(extractedT);
       }
       catch (Exception e) {
